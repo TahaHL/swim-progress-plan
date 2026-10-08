@@ -9,7 +9,7 @@ const NAV: NavItem[] = [
   { to: '/parent', label: 'Home', icon: House, end: true },
   { to: '/parent/skills', label: 'My Skills', shortLabel: 'Skills', icon: ListChecks },
   { to: '/parent/journey', label: 'Progress Journey', shortLabel: 'Journey', icon: RouteIcon },
-  { to: '/parent/achievements', label: 'Achievements', shortLabel: 'Achieved', icon: Award },
+  { to: '/parent/achievements', label: 'Achievements', shortLabel: 'Passes', icon: Award },
   { to: '/parent/profile', label: 'Profile', icon: UserRound },
 ];
 

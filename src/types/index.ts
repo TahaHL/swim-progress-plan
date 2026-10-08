@@ -8,8 +8,12 @@
 
 export type Role = 'parent' | 'instructor';
 
-/** The four assessment states, in ascending order. A skill with no assessment is "not yet assessed". */
-export type SkillStatus = 'not_yet' | 'developing' | 'consistent' | 'mastered';
+/**
+ * The four assessed levels, in ascending order. Together with "Not Assessed" they make the
+ * programme's five assessment labels. "Not Assessed" is not a level a swimmer is given: it is the
+ * absence of any assessment record, so it has no value here and is represented by null.
+ */
+export type SkillStatus = 'needs_practice' | 'fair' | 'good' | 'pass';
 
 export type ProgrammeFormat = 'one_to_one' | 'small_group';
 
@@ -84,10 +88,8 @@ export interface SwimmingSkill {
   objective: string;
   whyItMatters: string;
   successCriteria: string[];
-  /** Used in achievement titles: "Oliver has mastered {achievementLabel}!" */
-  achievementLabel: string;
-  /** Sentence used in the achievement message. "{name}" is replaced with the swimmer's first name. */
-  masteredSummary: string;
+  /** Sentence used when the skill is marked Pass. "{name}" is replaced with the swimmer's first name. */
+  passSummary: string;
   videos: SkillVideo[];
 }
 

@@ -21,37 +21,46 @@ section 3 after editing that file, run `node scripts/skills-review.mjs`.
 - [ ] **A3. "Stage" wording.** The app shows "Stage 3 in regular lessons" as plain text supplied by
   the lesson provider. Confirm which stage names to show, since
   these belong to the child's lesson provider.
-- [ ] **A4. What counts as achieved.** The progress figure counts a target as achieved at
-  Consistent or Mastered. This is a product rule, not a teaching standard. Confirm it, or choose
-  Mastered only.
-- [ ] **A5. Seventeen skills, equal weight.** Every skill counts the same in the percentage.
+- [ ] **A4. Whether Good counts.** The app counts only Pass in "Skills marked Pass". Decide
+  whether Good should also count towards a target being achieved. Until you decide, Good is never
+  treated as Pass.
+- [ ] **A5. Seventeen skills, equal weight.** Every skill counts the same in the Pass count.
   Confirm that is acceptable, given the overlaps in section 4.
 - [ ] **A6. Demo feedback text.** The instructor notes and targets for the fictional swimmers
   (in `src/data/seed.ts`) are invented examples. Read the ones for Oliver, since they are what
   anyone trying the demo will see.
 
-## 2. The four assessment states
+## 2. The five assessment labels
 
-These definitions separate practising a skill, doing it consistently and having mastered it. They
-appear in the parent view and next to every progress figure.
+The labels and their order are confirmed. **The descriptions are provisional suggestions and are
+not verified definitions.** The app marks them as provisional wherever they appear.
 
-| State | Current definition in the app |
-| --- | --- |
-| Not Yet Achieved | The skill is being introduced and practised. The success criteria are not met yet. |
-| Developing | Some of the success criteria are met, or all are met only with support, a float or reminders. |
-| Consistent | All success criteria are met on most attempts, without support. The development target is achieved. |
-| Mastered | All success criteria are met every time, without reminders, and hold up over distance and when tired. |
+| Level | Label | Provisional description in the app |
+| --- | --- | --- |
+| 1 | Not Assessed | This skill has not yet been evaluated. |
+| 2 | Needs Practice | The swimmer needs further development of this skill. |
+| 3 | Fair | The swimmer can demonstrate parts of the skill but is not yet fully proficient. |
+| 4 | Good | The swimmer demonstrates the skill well, with some room for improvement. |
+| 5 | Pass | The swimmer has satisfied the agreed assessment requirements for this skill. |
 
-**For your review:**
+**For your sign-off:**
 
-- [ ] "Most attempts" is not defined. Suggested for your decision: at least 3 of 4 attempts in one
-  session.
-- [ ] Mastered does not currently require evidence from more than one session. Suggested for your
-  decision: all criteria met in two consecutive sessions. The app does not enforce either rule; an
-  instructor can select any state.
-- [ ] Decide whether a float or other aid is allowed at Consistent.
-- [ ] Marking a skill Mastered sends the parent an achievement. Confirm that Mastered is the right
-  trigger, and not Consistent.
+- [ ] What specifically distinguishes **Fair**, **Good** and **Pass** in observable technique,
+  consistency and independence? In particular, what does Pass require that Good does not?
+- [ ] Does **Good** count as achieved for any programme target, or is **Pass** the only achieved
+  state? (The app counts Pass only.)
+- [ ] Is a skill marked **Pass** after one successful assessment, or only after repeated
+  demonstration? (The app does not enforce either; an instructor can select any level.)
+- [ ] Do the rules change with the swimmer's age, stage or the specific skill?
+- [ ] How should parents see a move from one level to another without reading it as guaranteed
+  stage advancement? (The app shows the move, and states next to every figure and achievement
+  that a Pass in a skill is not a stage award.)
+- [ ] May a float or other aid be used at Good or at Pass?
+- [ ] Marking a skill Pass sends the parent an achievement. Confirm Pass is the right trigger.
+
+How the success criteria listed under each skill below relate to the five labels is itself
+undefined: the criteria describe the skill done well, but nothing yet says how many must be met,
+or how reliably, for Fair, Good or Pass.
 
 ## 3. The seventeen skills
 
@@ -202,7 +211,7 @@ appear in the parent view and next to every progress figure.
 
 **For your review:**
 
-- [ ] Criterion 1 ("elbow exits the water before the hand") describes a high-elbow recovery. Many learn-to-swim frameworks accept a straight-arm over-water recovery at early stages. Decide whether a high elbow is required for Consistent, or only for Mastered.
+- [ ] Criterion 1 ("elbow exits the water before the hand") describes a high-elbow recovery. Many learn-to-swim frameworks accept a straight-arm over-water recovery at early stages. Decide whether a high elbow is required for Good, or only for Pass.
 - [ ] The mistakes video lists "swinging a straight arm wide to the side". If a straight-arm recovery is acceptable at this level, reword this to target only the low, wide swing.
 
 #### 9. Effective hand entry
@@ -374,7 +383,7 @@ appear in the parent view and next to every progress figure.
 **For your review:**
 
 - [ ] No distance is stated. This skill cannot be assessed consistently until one is set for each stage. See decision A1.
-- [ ] This skill restates the other sixteen over a longer swim, so it will tend to be the last to be achieved. Confirm that is the intention.
+- [ ] This skill restates the other sixteen over a longer swim, so it will tend to be the last to reach Pass. Confirm that is the intention.
 
 
 ## 4. Overlaps that affect the progress figure
@@ -395,9 +404,9 @@ or three targets at once, and a swimmer who struggles with one thing is held bac
 
 ## 5. Other wording to check
 
-- [ ] **Achievement messages.** One sentence per skill, shown when a skill is mastered, for example
+- [ ] **Achievement messages.** One sentence per skill, shown when a skill is marked Pass, for example
   "Oliver has demonstrated a consistent flutter kick while maintaining good body alignment."
-  They are in `src/data/skills.ts` as `masteredSummary`.
+  They are in `src/data/skills.ts` as `passSummary`.
 - [ ] **Video cue lists.** Each skill has three short lists: what to look for, mistakes to watch
   for, and what parents should notice from the poolside. These will become the shot lists for
   filming, so they need the same sign-off as the criteria.

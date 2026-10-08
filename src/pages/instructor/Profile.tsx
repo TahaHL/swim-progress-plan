@@ -9,9 +9,9 @@ import { fullName } from '@/store/selectors';
 
 const STEPS = [
   { title: 'You save an assessment', text: 'Each changed skill is added to the swimmer\'s assessment history with the date and programme week.' },
-  { title: 'Progress is recalculated', text: 'Targets achieved and skills mastered are worked out again from the history. Nothing is entered by hand.' },
+  { title: 'Progress is recalculated', text: 'The count of skills marked Pass is worked out again from the history. Nothing is entered by hand.' },
   { title: 'The parent dashboard updates', text: 'The skill, its feedback and the overall figures change as soon as the parent opens or refreshes their view.' },
-  { title: 'Mastered skills are celebrated', text: 'A skill that newly reaches Mastered creates an achievement and a notification for the parent.' },
+  { title: 'A new Pass is announced', text: 'A skill that newly reaches Pass creates an achievement and a notification for the parent. It is a Pass for that skill, not a stage award.' },
 ];
 
 export default function Profile() {

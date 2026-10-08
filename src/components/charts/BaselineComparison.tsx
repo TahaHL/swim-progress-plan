@@ -26,12 +26,12 @@ export function buildComparison(
 }
 
 export function describeChange(row: ComparisonRow): string {
-  if (row.to === null) return 'Not assessed';
+  if (row.to === null) return 'Not Assessed';
   if (row.from === null) return 'First assessed';
-  const steps = statusLevel(row.to) - statusLevel(row.from);
-  if (steps === 0) return 'No change';
-  const size = Math.abs(steps) === 1 ? '1 level' : `${Math.abs(steps)} levels`;
-  return steps > 0 ? `Up ${size}` : `Down ${size}`;
+  // Direction only. The levels are ordered labels, so no "distance" between them is reported.
+  const direction = statusLevel(row.to) - statusLevel(row.from);
+  if (direction === 0) return 'No change';
+  return direction > 0 ? 'Moved up' : 'Moved down';
 }
 
 const position = (status: SkillStatus) => ((statusLevel(status) + 0.5) / STATUS_ORDER.length) * 100;
@@ -50,7 +50,7 @@ function Track({ row }: { row: ComparisonRow }) {
       </span>
       {start !== null && end !== null && start !== end && (
         <span
-          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-st-dev"
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-st-fair"
           style={{ left: `${Math.min(start, end)}%`, width: `${Math.abs(end - start)}%` }}
         />
       )}
@@ -88,7 +88,7 @@ export function BaselineComparison({
         <span>Skill</span>
         <span className="grid grid-cols-4 text-center">
           {STATUS_ORDER.map((s) => (
-            <span key={s}>{STATUS_META[s].short}</span>
+            <span key={s} className="leading-tight">{STATUS_META[s].label}</span>
           ))}
         </span>
         <span className="text-right">Change</span>
@@ -121,14 +121,14 @@ export function BaselineComparison({
                       <Track row={row} />
                       <span aria-hidden="true" className="grid grid-cols-4 text-center text-[0.7rem] text-ink-3 sm:hidden">
                         {STATUS_ORDER.map((s) => (
-                          <span key={s}>{STATUS_META[s].short}</span>
+                          <span key={s} className="leading-tight">{STATUS_META[s].label}</span>
                         ))}
                       </span>
                     </span>
                     <span
                       className={cx(
                         'text-right text-sm whitespace-nowrap',
-                        steps > 0 ? 'font-semibold text-st-con-ink' : 'text-ink-2',
+                        steps > 0 ? 'font-semibold text-st-good-ink' : 'text-ink-2',
                       )}
                     >
                       {change}
@@ -146,7 +146,7 @@ export function BaselineComparison({
           Week {fromWeek}
         </span>
         <span className="inline-flex items-center gap-2">
-          <span aria-hidden="true" className="size-4 rounded-full bg-st-con" />
+          <span aria-hidden="true" className="size-4 rounded-full bg-st-good" />
           Week {toWeek}
         </span>
       </p>

@@ -22,8 +22,7 @@ export function WeekBar({ plan, className }: { plan: DevelopmentPlan; className?
   );
 }
 
-export function achievedText(summary: ProgressSummary): string {
-  return summary.achievedPct === null
-    ? 'No assessments yet'
-    : `${summary.achievedPct}% achieved (${summary.achieved} of ${summary.assessed})`;
+/** "Pass: 3 of 16 assessed skills", or a plain statement that nothing has been assessed. */
+export function passText(summary: ProgressSummary): string {
+  return summary.assessed === 0 ? 'No assessments yet' : `Pass: ${summary.passed} of ${summary.assessed} assessed skills`;
 }

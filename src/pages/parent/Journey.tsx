@@ -157,7 +157,7 @@ function WeekBlock({ week, scope, isLast }: { week: number; scope: ParentScope; 
             ) : (
               <p className="tabular text-ink-2">
                 {plural(assessed.length, 'skill')} assessed
-                {changed.length > 0 && `, ${changed.length} moved to a new state`}.
+                {changed.length > 0 && `, ${changed.length} moved to a new level`}.
               </p>
             )}
 
@@ -296,25 +296,29 @@ export default function Journey() {
           <>
             <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-4">
               <div>
-                <dt className="text-sm text-ink-2">Targets achieved, week {from}</dt>
-                <dd className="tabular font-display text-3xl font-semibold">{start.achievedPct ?? 0}%</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-ink-2">Targets achieved, week {to}</dt>
-                <dd className="tabular font-display text-3xl font-semibold" data-testid="journey-latest-pct">
-                  {end.achievedPct ?? 0}%
+                <dt className="text-sm text-ink-2">Skills marked Pass, week {from}</dt>
+                <dd className="tabular font-display text-3xl font-semibold">
+                  {start.passed}
+                  <span className="text-lg font-medium text-ink-2"> of {start.assessed}</span>
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-2">Skills that moved up</dt>
+                <dt className="text-sm text-ink-2">Skills marked Pass, week {to}</dt>
+                <dd className="tabular font-display text-3xl font-semibold" data-testid="journey-latest-pass">
+                  {end.passed}
+                  <span className="text-lg font-medium text-ink-2"> of {end.assessed}</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm text-ink-2">Skills that moved up a level</dt>
                 <dd className="tabular font-display text-3xl font-semibold">
                   {improved.length}
                   <span className="text-lg font-medium text-ink-2"> of {end.assessed}</span>
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-ink-2">Skills mastered</dt>
-                <dd className="tabular font-display text-3xl font-semibold">{end.mastered}</dd>
+                <dt className="text-sm text-ink-2">Not Assessed</dt>
+                <dd className="tabular font-display text-3xl font-semibold">{end.notAssessed}</dd>
               </div>
             </dl>
 
@@ -329,7 +333,7 @@ export default function Journey() {
 
             <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
               <figure className="min-w-0">
-                <figcaption className="mb-2 font-display font-semibold">Skills in each state, by week</figcaption>
+                <figcaption className="mb-2 font-display font-semibold">Skills at each level, by week</figcaption>
                 <StatusTrendChart trend={trend} />
                 <div className="mt-3">
                   <StatusLegend compact />

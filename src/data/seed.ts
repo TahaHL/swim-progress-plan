@@ -24,19 +24,20 @@ import type {
   SkillStatus,
 } from '@/types';
 
-export const SCHEMA_VERSION = 1;
+/** Bump whenever the stored shape changes, so data saved by an older version is discarded and reseeded. */
+export const SCHEMA_VERSION = 2; // 2: five assessment labels (Not Assessed, Needs Practice, Fair, Good, Pass)
 
-const CODE: Record<string, SkillStatus> = { N: 'not_yet', D: 'developing', C: 'consistent', M: 'mastered' };
+const CODE: Record<string, SkillStatus> = { N: 'needs_practice', F: 'fair', G: 'good', P: 'pass' };
 
 /**
  * Assessment history in compact form: one string per completed week, one character per skill in
- * library order. N, D, C, M are the four states; "-" means the skill was not assessed that week.
+ * library order. N = Needs Practice, F = Fair, G = Good, P = Pass; "-" means not assessed that week.
  */
 const HISTORY: Record<string, string[]> = {
-  'child-oliver': ['DDCCDNDDNCDNNDDN-', 'C-MMDDC---CN-----', '-C--CDMDDC-DNDD--'],
-  'child-isla': ['DNDDNNNNNDNNNNN--', 'D-CD-DN---D------', 'CD-CDDDDN-D-NN---'],
-  'child-noah': ['CCMCCDCDDCCDDDDDN', 'M--MC-M--C-C-D-D-', '-M--MC-CC-MCDCCDD'],
-  'child-amelia': ['NNDDNNN-N-NN-----', 'DNCD-ND---D------', 'DDCCDD-NNDDN-----'],
+  'child-oliver': ['FFGGFNFFNGFNNFFN-', 'G-PPFFG---GN-----', '-G--GFPFFG-FNFF--'],
+  'child-isla': ['FNFFNNNNNFNNNNN--', 'F-GF-FN---F------', 'GF-GFFFFN-F-NN---'],
+  'child-noah': ['GGPGGFGFFGGFFFFFN', 'P--PG-P--G-G-F-F-', '-P--PG-GG-PGFGGFF'],
+  'child-amelia': ['NNFFNNN-N-NN-----', 'FNGF-NF---F------', 'FFGGFF-NNFFN-----'],
   'child-leo': [],
 };
 
@@ -197,7 +198,7 @@ const SWIMMERS: SwimmerSeed[] = [
       'co-distance': { feedback: "Noah's technique is strong for the first half of a swim and loosens as he tires.", nextTarget: 'Swim 15 metres with the same kick tempo throughout.' },
     },
     updates: [
-      { week: 3, text: 'Noah has mastered several core skills and is now working on keeping them together over longer swims. His breathing pattern is the main thing to settle.', nextObjectives: ['Breathe every three pulls', 'Even pace over 15 metres'] },
+      { week: 3, text: 'Noah has reached Pass in several core skills and is now working on keeping them together over longer swims. His breathing pattern is the main thing to settle.', nextObjectives: ['Breathe every three pulls', 'Even pace over 15 metres'] },
     ],
   },
   {
@@ -309,7 +310,7 @@ export function buildSeed(todayIso: ISODate = today()): AppData {
           instructorId: DEMO_INSTRUCTOR_ID,
           note: ASSESSMENT_NOTES[`${child.id}|${skillId}|${week}`],
         });
-        if (status === 'mastered' && lastStatus.get(skillId) !== 'mastered') {
+        if (status === 'pass' && lastStatus.get(skillId) !== 'pass') {
           const achievement = buildAchievement(child, getSkill(skillId)!, week, date, `ach-${short}-${skillId}`);
           achievements.push(achievement);
           notifications.push(

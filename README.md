@@ -52,18 +52,18 @@ The start screen lists the same route in four steps, and **Demo guide** in the t
 any of them.
 
 1. Start screen: **Continue as Parent** (Sarah Williams, parent of Oliver, 7).
-2. Dashboard: 50% of assessed development targets achieved, latest achievement, next coaching
-   priority, six-week journey, latest instructor update. Open **How this is calculated**.
+2. Dashboard: skills marked Pass (3 of 16 assessed), what improved, what needs more work, latest
+   achievement, next coaching priority, six-week journey. Open **How this is calculated**.
 3. **My Skills** > **Side breathing**: objective, why it matters, success criteria, current
-   assessment (Developing), instructor feedback, next target, three video slots, history.
+   assessment (Fair), instructor feedback, next target, three video slots, history.
 4. Top bar: switch to **Instructor**. **Assessments** opens on Oliver, grouped with his class.
-5. Set **Side breathing** to **Consistent**, add a session note if you like, then **Save
-   assessment**. The banner shows targets
-   achieved moving from 50% to 56%. Press **View as parent**.
-6. Parent dashboard now shows 56%, the skill page shows Consistent, the Progress Journey shows the
-   change in week 3, and there is a new notification.
-7. Back as instructor, set a skill to **Mastered** and save. Returning to the parent view shows the
-   achievement celebration, a new achievement card and a notification.
+5. Set **Side breathing** to **Good**, add a session note if you like, then **Save assessment**.
+   Press **View as parent**.
+6. The skill page shows Good, the dashboard lists it under "improved", the Progress Journey shows the
+   change in week 3, and there is a new notification. The Pass count does not change, because
+   Good is not counted as Pass.
+7. Back as instructor, set a skill to **Pass** and save. Returning to the parent view shows the
+   achievement, the Pass count going up by one, and a notification.
 8. **Profile** > **Reset demo data** restores the original examples before the next run.
 
 Tip: open the parent view and the instructor view in two browser windows side by side. The parent
@@ -76,7 +76,7 @@ window updates the moment the instructor saves.
 - Dashboard: child profile, circular progress chart with a visible plain-English explanation,
   what improved at the last session, what needs more work and why, skill summary by area, latest
   achievement, next coaching priority, six-week journey, latest instructor update
-- Skill library: front crawl in 17 skills across five areas, four assessment states, filter
+- Skill library: front crawl in 17 skills across five areas, five assessment labels, filter
 - Skill detail: objective, why it matters, success criteria, current assessment, instructor
   feedback, next development target, three video slots (correct technique, common mistakes, what
   parents should notice), supervision reminder, assessment history
@@ -99,22 +99,45 @@ window updates the moment the instructor saves.
 - Full assessment history per swimmer; sessions with each swimmer's objectives
 
 **On save**, the app adds a history entry, recalculates progress, updates the parent dashboard,
-and creates an achievement and notification when a skill newly reaches Mastered. Changes persist in
+and creates an achievement and notification when a skill newly reaches Pass. Changes persist in
 the browser (localStorage) until **Reset demo data**.
+
+## The five assessment labels
+
+In this order, as confirmed by the programme owner:
+
+| Label | Provisional description (awaiting teacher confirmation) |
+| --- | --- |
+| Not Assessed | This skill has not yet been evaluated. |
+| Needs Practice | The swimmer needs further development of this skill. |
+| Fair | The swimmer can demonstrate parts of the skill but is not yet fully proficient. |
+| Good | The swimmer demonstrates the skill well, with some room for improvement. |
+| Pass | The swimmer has satisfied the agreed assessment requirements for this skill. |
+
+The labels and their order are fixed. **The descriptions are provisional**, and the exact
+difference between Good and Pass has not been defined. The app says so wherever the descriptions
+appear (`DEFINITIONS_CONFIRMED` in `src/lib/status.ts`).
+
+Not Assessed is not a level a swimmer is given. It means no assessment record exists, so it is
+stored as "no value", is never counted as an attempt, and cannot be selected by the instructor.
 
 ## How progress is calculated
 
 All rules live in `src/lib/progress.ts` and are covered by `src/lib/progress.test.ts`.
 
-- A plan lists its development targets (skills). Progress is measured against those and nothing
-  else. It is never a prediction about an official lesson stage.
-- A skill's current state is its most recent assessment.
-- A target is **achieved** when its state is Consistent or Mastered.
-- **Targets achieved %** = achieved targets / assessed targets x 100
-- **Skills mastered %** = mastered targets / assessed targets x 100
-- Skills not yet assessed (including newly added targets) are counted separately and left out of
-  both percentages. With nothing assessed there is no percentage, and the app says so.
-- A skill moved back down from Mastered (a correction) has its achievement withdrawn.
+- The one figure reported is a count: **Skills marked Pass: X of Y assessed skills**, with X / Y
+  also shown as a percentage.
+- Y is the number of skills with at least one assessment. Not Assessed skills are left out of Y
+  and their count is shown separately. With nothing assessed there is no percentage.
+- **Only Pass is counted. Good is not counted as Pass.** Whether Good should count towards a
+  target being achieved is an open decision for the owner.
+- The levels are ordered labels, not numbers. No score, average or weighting is calculated from
+  them. "Moved up" means only that the new label comes later in the order.
+- A skill's current level is its most recent assessment.
+- A Pass is for one skill within this programme. Passing skills here does not mean a swimming
+  stage has been passed, and the app says so next to every figure and in every achievement.
+- A skill moved back down from Pass (a correction) has its achievement withdrawn.
+- Saving Pass for a skill that is already Pass changes nothing, so achievements cannot duplicate.
 
 ## Project structure
 

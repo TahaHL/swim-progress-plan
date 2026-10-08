@@ -10,28 +10,11 @@ import type { ProgressSummary } from '@/lib/progress';
 export function ScopeNote({ childName }: { childName: string }) {
   return (
     <Note icon={Info} tone="foam">
-      These figures measure progress against the development targets chosen for {childName}'s Swim Progress Plan
-      programme, not {childName}'s overall swimming ability. They are not an official stage assessment and do not
-      predict when {childName} will move up a stage. Stage decisions stay with the teacher of {childName}'s{' '}
-      {PARTNER.lessonsLabel}.
+      These figures count skills marked Pass among the skills chosen for {childName}'s Swim Progress Plan programme.
+      They do not measure {childName}'s overall swimming ability. A Pass in a skill is not an official stage
+      assessment, and passing skills here does not mean a stage has been passed or predict when one will be. Stage
+      decisions stay with the teacher of {childName}'s {PARTNER.lessonsLabel}.
     </Note>
-  );
-}
-
-function Formula({ label, part, whole, result, partLabel }: { label: string; part: number; whole: number; result: number | null; partLabel: string }) {
-  return (
-    <div className="rounded-xl border border-line px-4 py-3">
-      <p className="font-semibold">{label}</p>
-      <p className="tabular mt-1 text-ink-2">
-        {whole === 0 ? (
-          'No skills have been assessed yet, so there is no percentage to show.'
-        ) : (
-          <>
-            {part} {partLabel} ÷ {whole} assessed × 100 = <strong className="text-ink">{result}%</strong>
-          </>
-        )}
-      </p>
-    </div>
   );
 }
 
@@ -68,40 +51,47 @@ export function HowCalculated({
         footer={<Button onClick={() => setOpen(false)}>Close</Button>}
       >
         <div className="flex flex-col gap-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Formula
-              label="Development targets achieved"
-              part={summary.achieved}
-              partLabel="achieved"
-              whole={summary.assessed}
-              result={summary.achievedPct}
-            />
-            <Formula
-              label="Skills mastered"
-              part={summary.mastered}
-              partLabel="mastered"
-              whole={summary.assessed}
-              result={summary.masteredPct}
-            />
+          <div className="rounded-xl border border-line px-4 py-3" data-testid="pass-formula">
+            <p className="font-semibold">
+              Skills marked Pass: {summary.passed} of {summary.assessed} assessed skills
+            </p>
+            <p className="tabular mt-1 text-ink-2">
+              {summary.assessed === 0 ? (
+                'No skills have been assessed yet, so there is no percentage to show.'
+              ) : (
+                <>
+                  {summary.passed} marked Pass ÷ {summary.assessed} assessed × 100 ={' '}
+                  <strong className="text-ink">{summary.passPct}%</strong>
+                </>
+              )}
+            </p>
           </div>
           <ul className="list-disc space-y-1.5 pl-5 text-ink-2 marker:text-line-strong">
             <li>
-              Only the {summary.totalTargets} targets in this programme are counted. The figures say nothing about
+              Only the {summary.totalTargets} skills in this programme are counted. The figure says nothing about
               skills outside the programme.
             </li>
             <li>
-              A target counts as <strong className="text-ink">achieved</strong> when the skill is assessed as Consistent
-              or Mastered.
+              Only <strong className="text-ink">Pass</strong> is counted. A skill marked Good is not counted as a
+              Pass.
             </li>
             <li>
-              Skills that have not been assessed yet are left out of the percentages and listed separately
-              {summary.unassessed > 0 ? ` (${summary.unassessed} at the moment)` : ''}, so they cannot make progress look
-              better or worse than it is.
+              Skills that are <strong className="text-ink">Not Assessed</strong> have no assessment recorded. They are
+              left out of the calculation and shown separately
+              {summary.notAssessed > 0 ? ` (${summary.notAssessed} at the moment)` : ''}. Not Assessed does not mean a
+              skill was tried and not passed.
             </li>
-            <li>A skill's current state is always its most recent assessment. Earlier assessments stay in its history.</li>
+            <li>
+              The levels are labels in a fixed order. They are not marks out of five, and no average or overall score
+              is calculated from them.
+            </li>
+            <li>A skill's current level is always its most recent assessment. Earlier assessments stay in its history.</li>
+            <li>
+              A Pass is for one skill. Passing skills here does not mean {childName} has passed a swimming stage.
+            </li>
           </ul>
           <div>
-            <h3 className="mb-3 text-lg font-semibold">The four assessment states</h3>
+            <h3 className="mb-3 text-lg font-semibold">The five assessment labels</h3>
             <StatusLegend />
           </div>
           <ScopeNote childName={childName} />

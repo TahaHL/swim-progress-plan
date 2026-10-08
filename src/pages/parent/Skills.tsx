@@ -5,10 +5,10 @@ import { ScopeNote } from '@/components/skills/HowCalculated';
 import { StatusBadge, StatusIcon, StatusLegend } from '@/components/ui/Status';
 import { EmptyState, PageHeader, cx } from '@/components/ui/primitives';
 import { CATEGORIES } from '@/data/skills';
-import { currentStatus, isAchieved } from '@/lib/progress';
+import { currentStatus, isPass } from '@/lib/progress';
 import { useParentScope } from '@/store/AppStore';
 
-type Filter = 'all' | 'working' | 'achieved';
+type Filter = 'all' | 'working' | 'pass';
 
 export default function Skills() {
   const { child, plan, skills, assessments, summary } = useParentScope();
@@ -30,13 +30,13 @@ export default function Skills() {
     [skills, assessments, child.id],
   );
   const visible = rows.filter((r) =>
-    filter === 'all' ? true : filter === 'achieved' ? isAchieved(r.status) : !isAchieved(r.status),
+    filter === 'all' ? true : filter === 'pass' ? isPass(r.status) : !isPass(r.status),
   );
 
   const filters: { id: Filter; label: string; count: number }[] = [
     { id: 'all', label: 'All skills', count: rows.length },
-    { id: 'working', label: 'Working on', count: rows.length - summary.achieved },
-    { id: 'achieved', label: 'Achieved', count: summary.achieved },
+    { id: 'working', label: 'Not yet Pass', count: rows.length - summary.passed },
+    { id: 'pass', label: 'Pass', count: summary.passed },
   ];
 
   return (
@@ -67,10 +67,10 @@ export default function Skills() {
       </div>
 
       {visible.length === 0 ? (
-        <EmptyState icon={ListFilter} title={filter === 'achieved' ? 'No targets achieved yet' : 'Nothing left to work on'}>
-          {filter === 'achieved'
-            ? `Skills appear here once ${child.firstName} is assessed as Consistent or Mastered.`
-            : `Every skill in ${child.firstName}'s plan has been achieved.`}
+        <EmptyState icon={ListFilter} title={filter === 'pass' ? 'No skills marked Pass yet' : 'Every skill is marked Pass'}>
+          {filter === 'pass'
+            ? `Skills appear here once ${child.firstName} is assessed as Pass.`
+            : `Every skill in ${child.firstName}'s plan is marked Pass. That is not the same as passing a swimming stage.`}
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-8">
@@ -78,7 +78,8 @@ export default function Skills() {
             const inCategory = visible.filter((r) => r.skill.categoryId === category.id);
             if (inCategory.length === 0) return null;
             const all = rows.filter((r) => r.skill.categoryId === category.id);
-            const achieved = all.filter((r) => isAchieved(r.status)).length;
+            const passed = all.filter((r) => isPass(r.status)).length;
+            const assessedCount = all.filter((r) => r.status !== null).length;
             return (
               <section key={category.id} id={`area-${category.id}`} aria-labelledby={`area-title-${category.id}`} className="scroll-mt-24">
                 <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -89,7 +90,8 @@ export default function Skills() {
                     <p className="text-ink-2">{category.summary}</p>
                   </div>
                   <p className="tabular text-[0.95rem] text-ink-2">
-                    {achieved} of {all.length} achieved
+                    Pass: {passed} of {assessedCount} assessed
+                    {all.length - assessedCount > 0 && `, ${all.length - assessedCount} not assessed`}
                   </p>
                 </div>
                 <ul className="panel divide-y divide-line overflow-hidden">
@@ -129,7 +131,7 @@ export default function Skills() {
 
       <section aria-labelledby="states-title" className="mt-10 border-t border-line pt-8">
         <h2 id="states-title" className="mb-4 text-xl font-semibold">
-          What the assessment states mean
+          The five assessment labels
         </h2>
         <StatusLegend />
         <div className="mt-6">

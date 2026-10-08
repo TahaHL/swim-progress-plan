@@ -54,7 +54,7 @@ page.on('pageerror', (e) => consoleErrors.push(String(e)));
 const heading = (name) => page.getByRole('heading', { level: 1, name });
 const sidebar = page.getByRole('complementary');
 const demoView = page.getByRole('group', { name: 'Demo view' });
-const pct = page.getByTestId('achieved-pct');
+const pct = page.getByTestId('pass-pct');
 
 async function asInstructorOpenOliver() {
   await demoView.getByRole('button', { name: 'Instructor' }).click();
@@ -87,14 +87,16 @@ await step('1. Enter the parent demo', async () => {
 });
 
 await step("2. Oliver's dashboard shows consistent figures", async () => {
-  await expectText(pct, (t) => t === '50%', 'Targets achieved');
-  await expectText(page.getByTestId('achieved-count'), '8 of 16 assessed development targets achieved');
-  await expectText(page.getByTestId('mastered-count'), '3 skills mastered, 1 not yet assessed');
-  await expectText(page.getByTestId('latest-achievement'), 'Oliver has mastered consistent flutter kicking!');
+  await expectText(pct, (t) => t === '19%', 'Skills marked Pass');
+  await expectText(page.getByTestId('pass-count'), '3 of 16 assessed skills');
+  await expectText(page.getByTestId('level-breakdown'), '5 Good, 6 Fair, 2 Needs Practice');
+  await expectText(page.getByTestId('not-assessed-count'), '1 Not Assessed, not counted');
+  await expectText(page.getByTestId('latest-achievement'), 'Oliver has reached Pass in Consistent kicking rhythm');
   await expectText(page.getByTestId('next-priority'), 'Maintaining body alignment while breathing to the side.');
   await expectText(page.getByTestId('latest-update'), 'coordinating breathing without interrupting his rhythm');
   await expectText(page.getByTestId('unread-count').first(), (t) => t === '2', 'Unread notifications');
-  await expectText(page.getByTestId('metric-explanation'), 'not a prediction of passing a stage');
+  await expectText(page.getByTestId('metric-explanation'), 'A Pass in a skill is not a stage pass');
+  await expectText(page.getByTestId('metric-explanation'), 'Only Pass is counted');
   await expectText(page.getByTestId('improving'), '5 skills moved up in week 3');
   await expectText(page.getByTestId('needs-work'), 'presses down with his leading arm');
   await expectText(page.getByTestId('needs-work'), 'Next target in coaching: Keep the leading arm extended');
@@ -111,7 +113,13 @@ await step('   The parent view contains no other swimmers', async () => {
 await step('   "How this is calculated" explains the metric with live numbers', async () => {
   await page.getByRole('button', { name: 'How this is calculated' }).click();
   const dialog = page.getByRole('dialog', { name: 'How progress is calculated' });
-  await expectText(dialog, '8 achieved ÷ 16 assessed × 100 = 50%');
+  await expectText(dialog, 'Skills marked Pass: 3 of 16 assessed skills');
+  await expectText(dialog, '3 marked Pass ÷ 16 assessed × 100 = 19%');
+  await expectText(dialog, 'A skill marked Good is not counted as a Pass');
+  await expectText(dialog, 'Not Assessed does not mean a skill was tried and not passed');
+  await expectText(dialog, 'not marks out of five');
+  await expectText(dialog, 'does not mean Oliver has passed a swimming stage');
+  await expectText(dialog.getByTestId('provisional-note'), 'awaiting confirmation by the teacher');
   await expectText(dialog, 'not an official stage assessment');
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
@@ -134,13 +142,25 @@ await step('3. Open Front Crawl skills', async () => {
   expect(count === 17, `Expected 17 skills, found ${count}`);
 });
 
+await step('   The five labels appear in order, with provisional descriptions', async () => {
+  const legend = page.locator('section[aria-labelledby="states-title"]');
+  const text = (await legend.innerText()).replace(/\s+/g, ' ');
+  const order = ['Not Assessed', 'Needs Practice', 'Fair', 'Good', 'Pass'].map((label) => text.indexOf(label));
+  expect(order.every((i) => i >= 0) && order.join() === [...order].sort((a, b) => a - b).join(), `Labels missing or out of order: ${order}`);
+  await expectText(legend.getByTestId('provisional-note'), 'provisional');
+  const body = await page.locator('body').innerText();
+  for (const old of ['Not Yet Achieved', 'Developing', 'Consistent\n', 'Mastered']) {
+    expect(!body.includes(old.replace('\\n', '\n')), `Old label still shown: ${old}`);
+  }
+});
+
 await step('4. Select Side Breathing', async () => {
   await page.getByRole('link', { name: /Side breathing/ }).click();
   await heading('Side breathing').waitFor();
 });
 
 await step('5. Read the skill description and assessment', async () => {
-  await expectText(page.getByTestId('skill-status'), (t) => t === 'Developing', 'Current assessment');
+  await expectText(page.getByTestId('skill-status'), (t) => t === 'Fair', 'Current assessment');
   await expectText(page.getByTestId('skill-feedback'), 'becoming more comfortable turning his head');
   await expectText(page.getByTestId('skill-target'), 'three consecutive side-breathing attempts');
   for (const title of ['Skill objective', 'Why this skill matters', 'Success criteria', 'Video demonstration', 'Assessment history']) {
@@ -180,15 +200,16 @@ await step("7. Find Oliver with search and open his assessment", async () => {
   expect((await rows.count()) === 1, 'Search should leave one swimmer');
   await rows.first().click();
   await heading('Oliver Williams').waitFor();
-  await expectText(page.getByTestId('plan-achieved'), '50%');
+  await expectText(page.getByTestId('plan-pass'), '3 of 16');
 });
 
 await step('8. Change the skill status', async () => {
   const group = page.getByRole('radiogroup', { name: 'Assessment for Side breathing' });
-  expect(await group.getByRole('radio', { name: 'Developing' }).isChecked(), 'Developing should be selected first');
-  await group.getByRole('radio', { name: 'Consistent' }).click();
+  expect(await group.getByRole('radio', { name: 'Fair' }).isChecked(), 'Fair should be selected first');
+  expect((await group.getByRole('radio').count()) === 4, 'Four assessed levels expected; Not Assessed is not a choice');
+  await group.getByRole('radio', { name: 'Good' }).click();
   await expectText(page.getByTestId('unsaved-count'), '1 unsaved change');
-  await expectText(page.getByTestId('assess-br-side'), 'Was Developing');
+  await expectText(page.getByTestId('assess-br-side'), 'Was Fair');
   await page.getByRole('button', { name: 'Notes for Side breathing' }).click();
   await page.getByLabel('Coaching note for Sarah').fill('Oliver turned his head to the side on four breaths in a row today.');
 });
@@ -206,15 +227,15 @@ await step('   Unsaved work survives leaving the sheet and coming back', async (
   await heading('Oliver Williams').waitFor();
   await page.getByRole('tab', { name: 'Assess' }).click();
   const group = page.getByRole('radiogroup', { name: 'Assessment for Side breathing' });
-  expect(await group.getByRole('radio', { name: 'Consistent' }).isChecked(), 'The staged change was lost');
+  expect(await group.getByRole('radio', { name: 'Good' }).isChecked(), 'The staged change was lost');
 });
 
 await step('9. Save the update', async () => {
   await page.getByRole('button', { name: 'Save assessment' }).click();
   const result = page.getByTestId('save-result');
-  await expectText(result, '50% to 56%');
+  await expectText(result, 'Skills marked Pass: unchanged at 3 of 16 assessed');
   await expectText(result, "Sarah Williams's dashboard has been updated");
-  await expectText(page.getByTestId('plan-achieved'), '56%');
+  await expectText(page.getByTestId('plan-pass'), '3 of 16');
   await page.screenshot({ path: `${SHOTS}04-assessment-saved.png`, fullPage: true });
 });
 
@@ -222,7 +243,7 @@ await step('   The change is in the assessment history', async () => {
   await page.getByRole('tab', { name: 'History' }).click();
   const first = page.getByTestId('history-week-3').locator('li').first();
   await expectText(first, 'Side breathing');
-  await expectText(first, 'Consistent');
+  await expectText(first, 'Good');
   await page.getByRole('tab', { name: 'Assess' }).click();
 });
 
@@ -238,47 +259,51 @@ await step('10. Return to the parent demo', async () => {
 await step('11. The new assessment appears', async () => {
   await page.getByRole('link', { name: /Side breathing/ }).first().click();
   await heading('Side breathing').waitFor();
-  await expectText(page.getByTestId('skill-status'), (t) => t === 'Consistent', 'Current assessment');
+  await expectText(page.getByTestId('skill-status'), (t) => t === 'Good', 'Current assessment');
   await expectText(page.getByTestId('skill-feedback'), 'four breaths in a row today');
   await sidebar.getByRole('link', { name: 'Progress Journey' }).click();
-  await expectText(page.getByTestId('journey-latest-pct'), '56%');
+  await expectText(page.getByTestId('journey-latest-pass'), '3 of 16');
   await expectText(page.getByTestId('week-3'), 'Side breathing');
 });
 
-await step('12. Progress calculations update', async () => {
+await step('12. Progress figures update, and Good does not count as Pass', async () => {
   await sidebar.getByRole('link', { name: 'Home' }).click();
-  await expectText(pct, (t) => t === '56%', 'Targets achieved');
-  await expectText(page.getByTestId('achieved-count'), '9 of 16 assessed development targets achieved');
-  await expectText(page.getByTestId('mastered-count'), '3 skills mastered');
+  // Good is not counted as Pass, so the Pass figure must not move. The level breakdown does.
+  await expectText(pct, (t) => t === '19%', 'Skills marked Pass');
+  await expectText(page.getByTestId('pass-count'), '3 of 16 assessed skills');
+  await expectText(page.getByTestId('level-breakdown'), '6 Good, 5 Fair, 2 Needs Practice');
   await expectText(page.getByTestId('unread-count').first(), (t) => t === '3', 'Unread notifications');
-  expect((await page.getByRole('dialog').count()) === 0, 'No celebration expected: nothing was newly mastered');
+  expect((await page.getByRole('dialog').count()) === 0, 'No celebration expected: nothing newly reached Pass');
 });
 
-await step('13. An achievement appears when a skill is newly Mastered', async () => {
+await step('13. An achievement appears once when a skill newly reaches Pass', async () => {
   await asInstructorOpenOliver();
-  // Keyboard only: focus the selected option and move right to Mastered.
+  // Keyboard only: focus the selected option and move right to Pass.
   const group = page.getByRole('radiogroup', { name: 'Assessment for Side breathing' });
-  await group.getByRole('radio', { name: 'Consistent' }).focus();
+  await group.getByRole('radio', { name: 'Good' }).focus();
   await page.keyboard.press('ArrowRight');
-  expect(await group.getByRole('radio', { name: 'Mastered' }).isChecked(), 'Arrow key should select Mastered');
+  expect(await group.getByRole('radio', { name: 'Pass' }).isChecked(), 'Arrow key should select Pass');
   await page.getByRole('button', { name: 'Save assessment' }).click();
-  await expectText(page.getByTestId('save-result'), 'Achievement sent to Sarah: Oliver has mastered side breathing!');
-  // Selecting Mastered again is not a change, so there is nothing to save and no second achievement.
-  await group.getByRole('radio', { name: 'Mastered' }).click();
+  await expectText(page.getByTestId('save-result'), 'Achievement sent to Sarah: Oliver has reached Pass in Side breathing');
+  await expectText(page.getByTestId('save-result'), '3 of 16 to 4 of 16 assessed');
+  // Selecting Pass again is not a change, so there is nothing to save and no second achievement.
+  await group.getByRole('radio', { name: 'Pass' }).click();
   await expectText(page.getByTestId('unsaved-count'), 'No unsaved changes');
   expect(await page.getByRole('button', { name: 'Save assessment' }).isDisabled(), 'Save should be disabled with nothing to save');
   await page.getByTestId('save-result').getByRole('button', { name: 'View as parent' }).click();
 
-  const dialog = page.getByRole('dialog', { name: /Oliver has mastered side breathing/ });
+  const dialog = page.getByRole('dialog', { name: /Oliver has reached Pass in Side breathing/ });
   await dialog.waitFor();
+  await expectText(dialog, 'not a swimming stage award');
   await page.screenshot({ path: `${SHOTS}05-achievement-celebration.png` });
   await dialog.getByRole('button', { name: /See what we're working on next/ }).click();
   await heading('Side breathing').waitFor();
-  await expectText(page.getByTestId('skill-status'), (t) => t === 'Mastered', 'Current assessment');
+  await expectText(page.getByTestId('skill-status'), (t) => t === 'Pass', 'Current assessment');
 
   await sidebar.getByRole('link', { name: 'Home' }).click();
-  await expectText(page.getByTestId('mastered-count'), '4 skills mastered');
-  await expectText(page.getByTestId('latest-achievement'), 'Oliver has mastered side breathing!');
+  await expectText(page.getByTestId('pass-count'), '4 of 16 assessed skills');
+  await expectText(pct, (t) => t === '25%', 'Skills marked Pass');
+  await expectText(page.getByTestId('latest-achievement'), 'Oliver has reached Pass in Side breathing');
   expect((await page.getByRole('dialog').count()) === 0, 'The celebration should only be shown once');
   await sidebar.getByRole('link', { name: 'Achievements' }).click();
   await heading('Achievements').waitFor();
@@ -292,34 +317,34 @@ await step('Changes persist after a reload', async () => {
   await page.goto(`${BASE}#/parent`);
   await page.reload();
   await heading('Welcome back, Sarah!').waitFor();
-  await expectText(pct, (t) => t === '56%', 'Targets achieved after reload');
+  await expectText(pct, (t) => t === '25%', 'Skills marked Pass after reload');
 });
 
 await step('Notifications: panel opens, links to the skill, and can be marked as read', async () => {
   await page.getByRole('button', { name: /^Notifications/ }).last().click();
   const panel = page.getByRole('dialog', { name: 'Notifications' });
-  await expectText(panel, 'Oliver has mastered side breathing!');
+  await expectText(panel, 'Oliver has reached Pass in Side breathing');
   await panel.getByRole('button', { name: 'Mark all as read' }).click();
   expect((await page.getByTestId('unread-count').count()) === 0, 'Unread badge should clear');
-  await panel.getByRole('button', { name: /Oliver has mastered side breathing/ }).click();
+  await panel.getByRole('button', { name: /Oliver has reached Pass in Side breathing/ }).click();
   await heading('Side breathing').waitFor();
 });
 
 await step('A second window updates live when the instructor saves', async () => {
   const parentWindow = await context.newPage();
   await parentWindow.goto(`${BASE}#/parent`);
-  await expectText(parentWindow.getByTestId('achieved-pct'), (t) => t === '56%');
+  await expectText(parentWindow.getByTestId('pass-pct'), (t) => t === '25%');
   await page.goto(`${BASE}#/instructor/assessments`);
   await heading('Assessments').waitFor();
-  await page.getByRole('radiogroup', { name: 'Assessment for Relaxed ankles' }).getByRole('radio', { name: 'Consistent' }).click();
+  await page.getByRole('radiogroup', { name: 'Assessment for Relaxed ankles' }).getByRole('radio', { name: 'Pass' }).click();
   await page.getByRole('button', { name: 'Save assessment' }).click();
-  await expectText(page.getByTestId('save-result'), '56% to 63%');
-  await expectText(parentWindow.getByTestId('achieved-pct'), (t) => t === '63%', 'Other window');
+  await expectText(page.getByTestId('save-result'), '4 of 16 to 5 of 16 assessed');
+  await expectText(parentWindow.getByTestId('pass-pct'), (t) => t === '31%', 'Other window');
   await parentWindow.close();
 });
 
-await step('Correcting a Mastered skill withdraws its achievement', async () => {
-  await page.getByRole('radiogroup', { name: 'Assessment for Side breathing' }).getByRole('radio', { name: 'Consistent' }).click();
+await step('Correcting a Pass downwards withdraws its achievement', async () => {
+  await page.getByRole('radiogroup', { name: 'Assessment for Side breathing' }).getByRole('radio', { name: 'Good' }).click();
   await page.getByRole('button', { name: 'Save assessment' }).click();
   await expectText(page.getByTestId('save-result'), '1 achievement withdrawn');
 });
@@ -349,21 +374,28 @@ await step('Empty states: swimmer not started, and a search with no results', as
 
 await step('Reset demo data restores the original figures', async () => {
   await page.goto(`${BASE}#/parent/profile`);
+  // A skill reached Pass in an earlier step, so the one-off celebration is waiting. Dismiss it.
+  await heading('Profile').waitFor();
+  const celebration = page.getByRole('dialog');
+  if ((await celebration.count()) > 0) {
+    await page.keyboard.press('Escape');
+    await celebration.waitFor({ state: 'detached' });
+  }
   await page.getByRole('button', { name: 'Reset demo data' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Reset demo data' }).click();
   await page.goto(`${BASE}#/parent`);
-  await expectText(pct, (t) => t === '50%', 'Targets achieved after reset');
-  await expectText(page.getByTestId('latest-achievement'), 'consistent flutter kicking');
+  await expectText(pct, (t) => t === '19%', 'Skills marked Pass after reset');
+  await expectText(page.getByTestId('latest-achievement'), 'Consistent kicking rhythm');
 });
 
 await step('A class of four can be assessed in one pass: 3 skills, a note and one save each', async () => {
   await page.goto(`${BASE}#/instructor/assessments`);
   await heading('Assessments').waitFor();
   const klass = [
-    ['Oliver', [['Relaxed ankles', 'Consistent'], ['Effective hand entry', 'Consistent'], ['Breathing rhythm', 'Developing']]],
-    ['Isla', [['Kick generated from the hips', 'Consistent'], ['Relaxed ankles', 'Consistent'], ['Effective hand entry', 'Developing']]],
-    ['Noah', [['Body alignment while breathing', 'Consistent'], ['Breathing rhythm', 'Consistent'], ['Maintaining technique over distance', 'Consistent']]],
-    ['Amelia', [['Horizontal alignment', 'Consistent'], ['Head position', 'Consistent'], ['Controlled arm recovery', 'Developing']]],
+    ['Oliver', [['Relaxed ankles', 'Good'], ['Effective hand entry', 'Good'], ['Breathing rhythm', 'Fair']]],
+    ['Isla', [['Kick generated from the hips', 'Good'], ['Relaxed ankles', 'Good'], ['Effective hand entry', 'Fair']]],
+    ['Noah', [['Body alignment while breathing', 'Good'], ['Breathing rhythm', 'Good'], ['Maintaining technique over distance', 'Pass']]],
+    ['Amelia', [['Horizontal alignment', 'Good'], ['Head position', 'Good'], ['Controlled arm recovery', 'Fair']]],
   ];
   let taps = 0;
   const started = Date.now();
@@ -416,10 +448,11 @@ await step('Parent view with no assessments shows clear empty states', async () 
   await expectText(main, 'No assessments yet');
   await expectText(main, 'Nothing has been assessed yet');
   await expectText(main, 'will post an update after the first session');
-  await expectText(main, 'it will be celebrated here');
+  await expectText(main, 'is marked Pass, it appears here');
   await page.screenshot({ path: `${SHOTS}09-parent-empty-state.png`, fullPage: true });
   await page.goto(`${BASE}#/parent/skills/br-side`);
-  await expectText(page.getByTestId('skill-status'), 'Not yet assessed');
+  await expectText(page.getByTestId('skill-status'), (t) => t === 'Not Assessed', 'Skill with no record');
+  await expectText(main, 'This skill has not yet been evaluated');
   await expectText(main, 'No feedback has been written for this skill yet');
   await page.goto(`${BASE}#/parent/journey`);
   await expectText(main, 'A comparison becomes available after the second session');
@@ -433,7 +466,21 @@ await step('Parent view with no assessments shows clear empty states', async () 
   await page.getByRole('button', { name: 'Reset demo data' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Reset demo data' }).click();
   await page.goto(`${BASE}#/parent`);
-  await expectText(pct, (t) => t === '50%', 'Targets achieved after reset');
+  await expectText(pct, (t) => t === '19%', 'Skills marked Pass after reset');
+});
+
+await step('Data saved by the old four-level version is discarded, not misread', async () => {
+  await page.goto(`${BASE}#/parent`);
+  await page.evaluate(() => {
+    const key = 'swim-progress-plan.demo.v1';
+    const data = JSON.parse(localStorage.getItem(key));
+    data.schemaVersion = 1;
+    data.assessments.forEach((a) => { a.status = 'mastered'; });
+    localStorage.setItem(key, JSON.stringify(data));
+  });
+  await page.reload();
+  await heading('Welcome back, Sarah!').waitFor();
+  await expectText(pct, (t) => t === '19%', 'Fresh demo data expected');
 });
 
 await step('Tablet widths: no sideways scrolling on the main screens', async () => {
@@ -480,7 +527,7 @@ await step('Phone layout: bottom navigation works and nothing scrolls sideways',
   const routes = [
     ['Skills', 'Front Crawl skills'],
     ['Journey', 'Progress Journey'],
-    ['Achieved', 'Achievements'],
+    ['Passes', 'Achievements'],
     ['Profile', 'Profile'],
     ['Home', 'Welcome back, Sarah!'],
   ];

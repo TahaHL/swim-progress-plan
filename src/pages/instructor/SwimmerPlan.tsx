@@ -238,14 +238,15 @@ export default function SwimmerPlan() {
           </div>
           <dl className="tabular grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4">
             <div>
-              <dt className="text-sm text-ink-2">Targets achieved</dt>
-              <dd className="font-display text-2xl font-semibold" data-testid="plan-achieved">
-                {summary.achievedPct === null ? 'None yet' : `${summary.achievedPct}%`}
+              <dt className="text-sm text-ink-2">Marked Pass</dt>
+              <dd className="font-display text-2xl font-semibold" data-testid="plan-pass">
+                {summary.assessed === 0 ? 'None yet' : summary.passed}
+                {summary.assessed > 0 && <span className="text-base font-medium text-ink-2"> of {summary.assessed}</span>}
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-ink-2">Mastered</dt>
-              <dd className="font-display text-2xl font-semibold">{summary.mastered}</dd>
+              <dt className="text-sm text-ink-2">Good</dt>
+              <dd className="font-display text-2xl font-semibold">{summary.counts.good}</dd>
             </div>
             <div>
               <dt className="text-sm text-ink-2">Assessed</dt>
@@ -269,11 +270,11 @@ export default function SwimmerPlan() {
               <p className="flex items-baseline justify-between gap-2 text-[0.95rem]">
                 <span className="font-medium">{getCategory(c.categoryId).name}</span>
                 <span className="tabular text-ink-2">
-                  {c.achieved}/{c.totalTargets}
+                  Pass {c.passed}/{c.assessed}
                 </span>
               </p>
               <div className="mt-1.5">
-                <SkillSegments statuses={c.statuses.map((s) => s.status)} label={`${c.achieved} of ${c.totalTargets} targets achieved`} />
+                <SkillSegments statuses={c.statuses.map((s) => s.status)} label={`Pass: ${c.passed} of ${c.assessed} assessed skills`} />
               </div>
             </li>
           ))}

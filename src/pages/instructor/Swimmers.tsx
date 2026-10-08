@@ -73,14 +73,15 @@ export default function Swimmers() {
                 <span className="col-start-2 text-[0.95rem] text-ink-2 md:col-start-auto">{formatName(plan.format)}</span>
                 <WeekBar plan={plan} className="col-start-2 md:col-start-auto" />
                 <span className="tabular col-start-2 text-[0.95rem] md:col-start-auto">
-                  {summary.achievedPct === null ? (
+                  {summary.assessed === 0 ? (
                     <span className="text-ink-3">No assessments yet</span>
                   ) : (
                     <>
-                      <span className="font-semibold">{summary.achievedPct}%</span>
+                      <span className="font-semibold">Pass: {summary.passed}</span>
                       <span className="text-ink-2">
                         {' '}
-                        achieved ({summary.achieved} of {summary.assessed}), {summary.mastered} mastered
+                        of {summary.assessed} assessed
+                        {summary.notAssessed > 0 && `, ${summary.notAssessed} not assessed`}
                       </span>
                     </>
                   )}

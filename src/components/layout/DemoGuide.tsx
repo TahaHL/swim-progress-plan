@@ -27,14 +27,14 @@ export const DEMO_STEPS: { title: string; text: string; action: string; role: Ro
   },
   {
     title: 'Switch to the instructor view',
-    text: 'Change Side breathing from Developing to Consistent for Oliver, then save.',
+    text: 'Change Side breathing from Fair to Good for Oliver, then save.',
     action: "Open Oliver's assessment",
     role: 'instructor',
     to: '/instructor/assessments?swimmer=child-oliver',
   },
   {
     title: 'Go back to the parent view',
-    text: 'The skill, the percentage and the notifications have all updated from that one save.',
+    text: 'The skill, the dashboard and the notifications have all updated from that one save.',
     action: 'View as parent',
     role: 'parent',
     to: '/parent',

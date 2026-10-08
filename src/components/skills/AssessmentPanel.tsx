@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, CalendarClock, CircleCheck, Eye, ListFilter, NotebookPen, RotateCcw } from 'lucide-react';
-import { StatusBadge, StatusIcon } from '@/components/ui/Status';
+import { ProvisionalNote, StatusBadge, StatusIcon } from '@/components/ui/Status';
 import { useToast } from '@/components/ui/Toast';
 import { Button, EmptyState, cx } from '@/components/ui/primitives';
 import { DEMO_PARENT_ID } from '@/config/demo';
@@ -10,14 +10,17 @@ import { CATEGORIES } from '@/data/skills';
 import type { SkillChange } from '@/lib/assessmentService';
 import { formatLong, formatMedium } from '@/lib/dates';
 import { plural } from '@/lib/format';
-import { STATUS_ORDER, currentStatus, isAchieved } from '@/lib/progress';
+import { STATUS_ORDER, currentStatus, isPass } from '@/lib/progress';
 import { STATUS_META } from '@/lib/status';
 import { useApp, type SessionResult } from '@/store/AppStore';
 import { EMPTY_DRAFT, useAssessmentDrafts, type SkillDraft } from '@/store/AssessmentDrafts';
 import { fullName, planSkills, selectSwimmer } from '@/store/selectors';
 import type { SkillStatus, SwimmingSkill } from '@/types';
 
-/** Four-way choice for one skill. Behaves as a radio group: arrow keys move and select. */
+/**
+ * The four assessed levels for one skill. Behaves as a radio group: arrow keys move and select.
+ * With nothing selected the skill is Not Assessed, which is a missing record, not a level to pick.
+ */
 function StatusRadio({
   value,
   onChange,
@@ -56,7 +59,7 @@ function StatusRadio({
             onClick={() => onChange(status)}
             onKeyDown={(e) => onKeyDown(e, index)}
             className={cx(
-              'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border px-1 text-[0.78rem] leading-none font-semibold transition-colors sm:min-h-11 sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-sm',
+              'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border px-1 text-center text-[0.78rem] leading-[1.1] font-semibold transition-colors sm:min-h-11 sm:flex-row sm:gap-1.5 sm:px-2 sm:text-left sm:text-[0.8125rem]',
               selected
                 ? cx(STATUS_META[status].chip, 'border-transparent ring-2 ring-deep ring-inset')
                 : 'border-control bg-surface text-ink-2 hover:border-ink-2 hover:text-ink',
@@ -65,10 +68,10 @@ function StatusRadio({
             <StatusIcon
               status={status}
               size={16}
-              inverse={selected && status === 'mastered'}
+              inverse={selected && status === 'pass'}
               className={selected ? undefined : 'opacity-60'}
             />
-            {STATUS_META[status].short}
+            {STATUS_META[status].label}
           </button>
         );
       })}
@@ -115,7 +118,7 @@ function SkillRow({
             <p className="text-[0.95rem] text-ink-2">
               {statusChanged ? (
                 <span className="font-semibold text-ocean-dark">
-                  Was {saved ? STATUS_META[saved].label : 'not yet assessed'}
+                  Was {saved ? STATUS_META[saved].label : 'Not Assessed'}
                 </span>
               ) : notesChanged ? (
                 <span className="font-semibold text-ocean-dark">Notes edited</span>
@@ -205,7 +208,7 @@ type Filter = 'all' | 'working';
  * for the parent and the next coaching priority, all committed with one "Save assessment".
  * Unsaved work is held in the drafts store, so it survives moving to another swimmer or page.
  * Saving updates the history, the progress figures, the parent's dashboard and, for a newly
- * mastered skill, the parent's achievements.
+ * passed skill, the parent's achievements.
  */
 export function AssessmentPanel({
   childId,
@@ -224,7 +227,7 @@ export function AssessmentPanel({
   const [openNotes, setOpenNotes] = useState<string | null>(null);
   const [result, setResult] = useState<SessionResult | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
-  /** Skills saved in this sitting stay visible under the "Working on" filter. */
+  /** Skills saved in this sitting stay visible under the "Not yet Pass" filter. */
   const [justSaved, setJustSaved] = useState<string[]>([]);
 
   const skills = useMemo(() => (swimmer ? planSkills(swimmer.plan) : []), [swimmer]);
@@ -267,11 +270,11 @@ export function AssessmentPanel({
   const unsaved = changes.length + (note.trim() ? 1 : 0) + (priorityChanged ? 1 : 0);
 
   const statusOf = (skill: SwimmingSkill) => currentStatus(data.assessments, child.id, skill.id);
-  const workingCount = skills.filter((s) => !isAchieved(statusOf(s))).length;
+  const workingCount = skills.filter((s) => !isPass(statusOf(s))).length;
   const visible =
     filter === 'all'
       ? skills
-      : skills.filter((s) => !isAchieved(statusOf(s)) || draft.skills[s.id] !== undefined || justSaved.includes(s.id));
+      : skills.filter((s) => !isPass(statusOf(s)) || draft.skills[s.id] !== undefined || justSaved.includes(s.id));
 
   const updateSkill = (skillId: string, patch: SkillDraft) => {
     setResult(null);
@@ -307,7 +310,7 @@ export function AssessmentPanel({
 
   const filters: { id: Filter; label: string; count: number }[] = [
     { id: 'all', label: 'All skills', count: skills.length },
-    { id: 'working', label: 'Working on', count: workingCount },
+    { id: 'working', label: 'Not yet Pass', count: workingCount },
   ];
 
   return (
@@ -357,16 +360,12 @@ export function AssessmentPanel({
                   {result.notesUpdated > 0 && <li>Coaching notes updated on {plural(result.notesUpdated, 'skill')}.</li>}
                   {result.noteSent && <li>Session note sent to {parent.firstName}.</li>}
                   {result.priorityChanged && <li>Next coaching priority updated.</li>}
-                  {result.before.achievedPct !== null && result.after.achievedPct !== null && (
+                  {result.after.assessed > 0 && (
                     <li>
-                      Targets achieved:{' '}
-                      {result.before.achievedPct === result.after.achievedPct
-                        ? `unchanged at ${result.after.achievedPct}%`
-                        : `${result.before.achievedPct}% to ${result.after.achievedPct}%`}
-                      . Skills mastered:{' '}
-                      {result.before.mastered === result.after.mastered
-                        ? `unchanged at ${result.after.mastered}`
-                        : `${result.before.mastered} to ${result.after.mastered}`}
+                      Skills marked Pass:{' '}
+                      {result.before.passed === result.after.passed && result.before.assessed === result.after.assessed
+                        ? `unchanged at ${result.after.passed} of ${result.after.assessed} assessed`
+                        : `${result.before.passed} of ${result.before.assessed} to ${result.after.passed} of ${result.after.assessed} assessed`}
                       .
                     </li>
                   )}
@@ -378,7 +377,7 @@ export function AssessmentPanel({
                   {result.removedAchievements > 0 && (
                     <li>
                       {plural(result.removedAchievements, 'achievement')} withdrawn, because the skill is no longer
-                      marked Mastered.
+                      marked Pass.
                     </li>
                   )}
                 </ul>
@@ -405,14 +404,14 @@ export function AssessmentPanel({
       {visible.length === 0 ? (
         <EmptyState
           icon={ListFilter}
-          title="Every target is achieved"
+          title="Every skill is marked Pass"
           action={
             <Button variant="secondary" onClick={() => setFilter('all')}>
               Show all skills
             </Button>
           }
         >
-          {child.firstName} is Consistent or Mastered in every skill in the plan.
+          Every skill in {child.firstName}'s plan is marked Pass. That is a result for these skills, not a stage award.
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-6">
@@ -524,8 +523,11 @@ export function AssessmentPanel({
           <StatusBadge key={status} status={status} size="sm" />
         ))}
         <span className="basis-full">
-          Consistent and Mastered count as an achieved target. Marking a skill Mastered sends the parent an achievement.
+          A skill with no level selected is Not Assessed and is not counted. Only Pass is counted in the parent's
+          "skills marked Pass" figure; Good is not counted as Pass. Marking a skill Pass sends the parent an
+          achievement for that skill.
         </span>
+        <ProvisionalNote className="basis-full" />
       </div>
     </div>
   );

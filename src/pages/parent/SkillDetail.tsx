@@ -1,15 +1,18 @@
 import { Link, useParams } from 'react-router';
 import { LifeBuoy, MessageSquareText, SearchX, Target } from 'lucide-react';
 import { VideoSection } from '@/components/skills/VideoSection';
-import { StatusBadge, StatusIcon } from '@/components/ui/Status';
+import { ProvisionalNote, StatusBadge, StatusIcon } from '@/components/ui/Status';
 import { Avatar, EmptyState, PageHeader, buttonClass, cx } from '@/components/ui/primitives';
 import { PARTNER } from '@/config/demo';
 import { getCategory, getSkill } from '@/data/skills';
 import { formatMedium } from '@/lib/dates';
 import { STATUS_ORDER, skillHistory } from '@/lib/progress';
-import { STATUS_META } from '@/lib/status';
+import { statusDescription, statusLabel } from '@/lib/status';
+import type { SkillStatus } from '@/types';
 import { useParentScope } from '@/store/AppStore';
 import { fullName } from '@/store/selectors';
+
+const FIVE_LEVELS: (SkillStatus | null)[] = [null, ...STATUS_ORDER];
 
 export default function SkillDetail() {
   const { skillId = '' } = useParams();
@@ -57,7 +60,7 @@ export default function SkillDetail() {
               <StatusIcon status={status} size={44} inverse />
               <div>
                 <p className="font-display text-2xl leading-tight font-semibold" data-testid="skill-status">
-                  {status ? STATUS_META[status].label : 'Not yet assessed'}
+                  {statusLabel(status)}
                 </p>
                 <p className="text-white/75">
                   {latest ? `Assessed ${formatMedium(latest.date)}, week ${latest.week}` : 'No assessment recorded yet'}
@@ -65,27 +68,27 @@ export default function SkillDetail() {
               </div>
             </div>
             <p className="mt-4 leading-snug text-white/85">
-              {status
-                ? STATUS_META[status].description
-                : `${instructor.firstName} will assess this skill later in the programme.`}
+              {statusDescription(status)}
+              {status === null && ` ${instructor.firstName} will assess it later in the programme.`}
             </p>
-            <ol aria-label="Assessment scale" className="mt-5 grid grid-cols-4 gap-1.5">
-              {STATUS_ORDER.map((s) => (
+            <ol aria-label="The five assessment labels, in order" className="mt-5 grid grid-cols-5 gap-1">
+              {FIVE_LEVELS.map((s) => (
                 <li
-                  key={s}
+                  key={s ?? 'none'}
                   aria-current={s === status ? 'step' : undefined}
                   className={cx(
-                    'rounded-lg px-1 py-2 text-center text-[0.78rem] leading-tight font-semibold',
-                    s === status ? 'bg-white text-deep' : 'bg-white/10 text-white/70',
+                    'grid min-h-11 place-items-center rounded-lg px-0.5 py-1.5 text-center text-[0.72rem] leading-tight font-semibold',
+                    s === status ? 'bg-white text-deep' : 'bg-white/10 text-white/75',
                   )}
                 >
-                  {STATUS_META[s].short}
+                  {statusLabel(s)}
                 </li>
               ))}
             </ol>
-            <p className="mt-4 text-sm leading-snug text-white/65">
-              Assessed against Swim Progress Plan criteria. This is separate from stage awards in {child.firstName}'s{' '}
-              {PARTNER.lessonsLabel}.
+            <ProvisionalNote onDeep className="mt-3" />
+            <p className="mt-3 text-sm leading-snug text-white/75">
+              Assessed against Swim Progress Plan requirements for this one skill. A Pass here is not a stage award in{' '}
+              {child.firstName}'s {PARTNER.lessonsLabel}.
             </p>
           </section>
 

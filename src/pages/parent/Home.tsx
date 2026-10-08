@@ -11,7 +11,8 @@ import { PROGRAMME_PHASES } from '@/config/demo';
 import { getCategory, getSkill } from '@/data/skills';
 import { daysBetween, formatMedium, today } from '@/lib/dates';
 import { formatName, plural } from '@/lib/format';
-import { currentStatus, isAchieved, statusLevel, weekAssessments, type CategoryProgress } from '@/lib/progress';
+import { STATUS_ORDER, currentStatus, isPass, statusLevel, weekAssessments, type CategoryProgress } from '@/lib/progress';
+import { STATUS_META } from '@/lib/status';
 import { useParentScope } from '@/store/AppStore';
 import { fullName } from '@/store/selectors';
 import type { SkillStatus, SwimmingSkill } from '@/types';
@@ -26,8 +27,8 @@ function Fact({ label, children, wide = false }: { label: string; children: Reac
 }
 
 function categoryState(category: CategoryProgress, focusIds: string[]): { label: string; className: string } {
-  if (category.assessed === 0) return { label: 'Not yet assessed', className: 'text-ink-3' };
-  if (category.achieved === category.totalTargets) return { label: 'All achieved', className: 'text-st-con-ink' };
+  if (category.assessed === 0) return { label: 'Not Assessed', className: 'text-ink-3' };
+  if (category.passed === category.totalTargets) return { label: 'All marked Pass', className: 'text-st-good-ink' };
   if (category.statuses.some((s) => focusIds.includes(s.skillId))) return { label: 'Current focus', className: 'text-aqua-dark' };
   return { label: 'In progress', className: 'text-ink-2' };
 }
@@ -35,17 +36,18 @@ function categoryState(category: CategoryProgress, focusIds: string[]): { label:
 export default function Home() {
   const scope = useParentScope();
   const { parent, child, plan, summary, categories, nextSession, latestUpdate, latestAchievement, instructor, assessments } = scope;
-  const shownPct = useCountUp(summary.achievedPct ?? 0);
+  const shownPct = useCountUp(summary.passPct ?? 0);
   const nextPhase = PROGRAMME_PHASES.find((p) => p.week === plan.currentWeek + 1);
   const currentPhase = PROGRAMME_PHASES.find((p) => p.week === plan.currentWeek);
   const improved = plan.currentWeek > 0 ? weekAssessments(assessments, child.id, plan.currentWeek, plan.skillIds).filter((w) => w.improved) : [];
-  // Skills the instructor has chosen to concentrate on; failing that, the least secure assessed skills.
+  // Skills the instructor has chosen to concentrate on that are not yet marked Pass; failing that,
+  // the assessed skills at the earliest levels. Ordering by level is a comparison, not a score.
   const focusIds =
     plan.focusSkillIds.length > 0
       ? plan.focusSkillIds
       : scope.skills
           .map((skill) => ({ id: skill.id, status: currentStatus(assessments, child.id, skill.id) }))
-          .filter((x): x is { id: string; status: SkillStatus } => x.status !== null && !isAchieved(x.status))
+          .filter((x): x is { id: string; status: SkillStatus } => x.status !== null && !isPass(x.status))
           .sort((a, b) => statusLevel(a.status) - statusLevel(b.status))
           .slice(0, 3)
           .map((x) => x.id);
@@ -56,7 +58,7 @@ export default function Home() {
       feedback: plan.skillNotes[id]?.feedback,
       nextTarget: plan.skillNotes[id]?.nextTarget,
     }))
-    .filter((x): x is { skill: SwimmingSkill; status: SkillStatus | null; feedback: string | undefined; nextTarget: string | undefined } => Boolean(x.skill) && !isAchieved(x.status));
+    .filter((x): x is { skill: SwimmingSkill; status: SkillStatus | null; feedback: string | undefined; nextTarget: string | undefined } => Boolean(x.skill) && !isPass(x.status));
   const achievementIsRecent = latestAchievement ? daysBetween(latestAchievement.date, today()) <= 7 : false;
 
   return (
@@ -108,42 +110,50 @@ export default function Home() {
 
           <div className="flex flex-col items-center gap-5 border-t border-white/10 pt-7 sm:flex-row sm:gap-7 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10">
             <ProgressRing
-              value={summary.achievedPct}
+              value={summary.passPct}
               onDeep
               label={
-                summary.achievedPct === null
+                summary.passPct === null
                   ? 'No skills assessed yet'
-                  : `${summary.achievedPct}% of assessed development targets achieved`
+                  : `Skills marked Pass: ${summary.passed} of ${summary.assessed} assessed skills, ${summary.passPct}%`
               }
             >
-              {summary.achievedPct === null ? (
+              {summary.passPct === null ? (
                 <span className="px-6 text-[0.95rem] leading-tight text-white/80">No assessments yet</span>
               ) : (
                 <span>
-                  <span data-testid="achieved-pct" className="tabular block font-display text-[2.75rem] leading-none font-semibold">
+                  <span data-testid="pass-pct" className="tabular block font-display text-[2.75rem] leading-none font-semibold">
                     {shownPct}%
                   </span>
-                  <span className="mt-1 block text-sm text-white/75">achieved</span>
+                  <span className="mt-1 block text-sm text-white/75">marked Pass</span>
                 </span>
               )}
             </ProgressRing>
             <div className="text-center sm:text-left">
-              <h3 className="text-lg font-semibold">Overall skill development</h3>
-              <p className="tabular mt-1.5 max-w-64 leading-snug text-white/85" data-testid="achieved-count">
+              <h3 className="text-lg font-semibold">Skills marked Pass</h3>
+              <p className="tabular mt-1.5 max-w-64 leading-snug text-white/85" data-testid="pass-count">
                 {summary.assessed === 0
                   ? `${child.firstName}'s first assessment will appear here after the first session.`
-                  : `${summary.achieved} of ${summary.assessed} assessed development targets achieved`}
+                  : `${summary.passed} of ${summary.assessed} assessed skills`}
               </p>
               {summary.assessed > 0 && (
                 <>
-                  <p className="tabular mt-1 text-white/85" data-testid="mastered-count">
-                    {plural(summary.mastered, 'skill')} mastered
-                    {summary.unassessed > 0 && `, ${summary.unassessed} not yet assessed`}
+                  <p className="tabular mt-1 max-w-64 leading-snug text-white/85" data-testid="level-breakdown">
+                    {[...STATUS_ORDER]
+                      .reverse()
+                      .filter((level) => level !== 'pass')
+                      .map((level) => `${summary.counts[level]} ${STATUS_META[level].label}`)
+                      .join(', ')}
                   </p>
+                  {summary.notAssessed > 0 && (
+                    <p className="tabular mt-1 text-white/75" data-testid="not-assessed-count">
+                      {summary.notAssessed} Not Assessed, not counted
+                    </p>
+                  )}
                   <p className="mt-2 max-w-64 text-sm leading-snug text-white/75" data-testid="metric-explanation">
-                    Measured against the {plan.strokeName.toLowerCase()} targets chosen for this programme, not{' '}
-                    {child.firstName}'s overall swimming ability. Achieved means assessed as Consistent or Mastered.
-                    It is not a prediction of passing a stage.
+                    Counted among the {plan.strokeName.toLowerCase()} skills chosen for this programme, not{' '}
+                    {child.firstName}'s overall swimming ability. Only Pass is counted. A Pass in a skill is not a
+                    stage pass.
                   </p>
                 </>
               )}
@@ -170,7 +180,7 @@ export default function Home() {
               <p className="mt-2 text-ink-2">Nothing has been assessed yet. The first assessment is recorded in week 1.</p>
             ) : improved.length === 0 ? (
               <p className="mt-2 text-ink-2">
-                No skills moved up a state in week {plan.currentWeek}. Progress within a state is described in the
+                No skills moved up a level in week {plan.currentWeek}. Progress within a level is described in the
                 instructor's note on each skill.
               </p>
             ) : (
@@ -214,7 +224,7 @@ export default function Home() {
               <p className="mt-2 text-ink-2">
                 {summary.assessed === 0
                   ? `${instructor.firstName} will set the first priorities after the baseline assessment.`
-                  : `Every assessed target is achieved. ${instructor.firstName} will set new targets at the next session.`}
+                  : `Every focus skill is marked Pass. ${instructor.firstName} will set new priorities at the next session.`}
               </p>
             ) : (
               <ul className="mt-2 divide-y divide-line">
@@ -271,12 +281,12 @@ export default function Home() {
                         <span className="mt-2 block">
                           <SkillSegments
                             statuses={category.statuses.map((s) => s.status)}
-                            label={`${category.achieved} of ${category.totalTargets} targets achieved`}
+                            label={`Pass: ${category.passed} of ${category.assessed} assessed skills`}
                           />
                         </span>
                         <span className="tabular mt-1.5 block text-sm text-ink-2">
-                          {category.achieved} of {category.totalTargets} targets achieved
-                          {category.unassessed > 0 && `, ${category.unassessed} not yet assessed`}
+                          Pass: {category.passed} of {category.assessed} assessed
+                          {category.notAssessed > 0 && `, ${category.notAssessed} not assessed`}
                         </span>
                       </span>
                       <ChevronRight className="size-5 shrink-0 text-ink-3 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
@@ -351,7 +361,7 @@ export default function Home() {
                   <Award className="size-6" aria-hidden="true" />
                 </span>
                 <p className="text-ink-2">
-                  When {child.firstName} masters a skill, it will be celebrated here.
+                  When one of {child.firstName}'s skills is marked Pass, it appears here.
                 </p>
               </div>
             )}

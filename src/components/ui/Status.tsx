@@ -1,16 +1,16 @@
 import { useId } from 'react';
 import { STATUS_ORDER } from '@/lib/progress';
-import { STATUS_META, UNASSESSED_LABEL, statusLabel } from '@/lib/status';
+import { DEFINITIONS_CONFIRMED, NOT_ASSESSED, PROVISIONAL_NOTE, STATUS_META, statusDescription, statusLabel } from '@/lib/status';
 import type { SkillStatus } from '@/types';
 import { cx } from './primitives';
 
-/** How full the gauge is for each state. Shape carries the meaning, so colour is never the only cue. */
-const FILL_LEVEL: Record<SkillStatus, number> = { not_yet: 0, developing: 0.42, consistent: 0.74, mastered: 1 };
+/** How full the gauge is for each level. Shape carries the meaning, so colour is never the only cue. */
+const FILL_LEVEL: Record<SkillStatus, number> = { needs_practice: 0, fair: 0.42, good: 0.74, pass: 1 };
 
 /**
  * Depth gauge: a circle that fills with water as a skill becomes more secure.
- * Empty ring = Not Yet Achieved, part-filled = Developing, mostly filled = Consistent,
- * full with a tick = Mastered, dashed ring = not yet assessed.
+ * Dashed ring = Not Assessed, empty ring = Needs Practice, part-filled = Fair,
+ * mostly filled = Good, full with a tick = Pass.
  */
 export function StatusIcon({
   status,
@@ -27,11 +27,11 @@ export function StatusIcon({
   const clipId = useId();
   const ring = inverse
     ? '#ffffff'
-    : status === null || status === 'not_yet'
+    : status === null || status === 'needs_practice'
       ? 'var(--color-control)'
-      : status === 'mastered'
-        ? 'var(--color-st-mas)'
-        : 'var(--color-st-con)';
+      : status === 'pass'
+        ? 'var(--color-st-pass)'
+        : 'var(--color-st-good)';
   const fill = inverse ? '#ffffff' : status ? STATUS_META[status].color : 'none';
   const level = status ? FILL_LEVEL[status] : 0;
   const waterTop = 2 + 20 * (1 - level);
@@ -57,11 +57,11 @@ export function StatusIcon({
         strokeWidth="2"
         strokeDasharray={status === null ? '3.2 3.1' : undefined}
       />
-      {status === 'mastered' && (
+      {status === 'pass' && (
         <path
           d="M7.6 12.4l3 3 5.8-6.2"
           fill="none"
-          stroke={inverse ? 'var(--color-st-mas)' : '#ffffff'}
+          stroke={inverse ? 'var(--color-st-pass)' : '#ffffff'}
           strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -82,7 +82,7 @@ export function StatusBadge({ status, size = 'md' }: { status: SkillStatus | nul
         )}
       >
         <StatusIcon status={null} size={size === 'sm' ? 14 : 16} />
-        {UNASSESSED_LABEL}
+        {NOT_ASSESSED.label}
       </span>
     );
   }
@@ -94,13 +94,13 @@ export function StatusBadge({ status, size = 'md' }: { status: SkillStatus | nul
         STATUS_META[status].chip,
       )}
     >
-      <StatusIcon status={status} size={size === 'sm' ? 14 : 16} inverse={status === 'mastered'} />
+      <StatusIcon status={status} size={size === 'sm' ? 14 : 16} inverse={status === 'pass'} />
       {STATUS_META[status].label}
     </span>
   );
 }
 
-/** One segment per skill, coloured by its current state. Summarises a group of skills at a glance. */
+/** One segment per skill, coloured by its current level. Summarises a group of skills at a glance. */
 export function SkillSegments({
   statuses,
   label,
@@ -119,7 +119,7 @@ export function SkillSegments({
             'h-2 min-w-3 flex-1 rounded-full',
             status === null
               ? cx('border border-dashed', onDeep ? 'border-white/40' : 'border-line-strong')
-              : status === 'mastered' && onDeep
+              : status === 'pass' && onDeep
                 ? 'bg-white'
                 : STATUS_META[status].swatch,
           )}
@@ -129,32 +129,48 @@ export function SkillSegments({
   );
 }
 
-/** The four states with their plain-English meaning. */
+/** The five labels in their confirmed order. Not Assessed comes first and is not a grade. */
+const FIVE_LEVELS: (SkillStatus | null)[] = [null, ...STATUS_ORDER];
+
+/** Says plainly that the descriptions are not yet approved teaching definitions. */
+export function ProvisionalNote({ className, onDeep = false }: { className?: string; onDeep?: boolean }) {
+  if (DEFINITIONS_CONFIRMED) return null;
+  return (
+    <p data-testid="provisional-note" className={cx('text-sm leading-snug', onDeep ? 'text-white/75' : 'text-ink-2', className)}>
+      {PROVISIONAL_NOTE}
+    </p>
+  );
+}
+
+/** The five labels with their provisional parent-friendly descriptions. */
 export function StatusLegend({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
       <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-ink-2">
-        {STATUS_ORDER.map((status) => (
-          <li key={status} className="inline-flex items-center gap-1.5">
+        {FIVE_LEVELS.map((status) => (
+          <li key={status ?? 'none'} className="inline-flex items-center gap-1.5">
             <StatusIcon status={status} size={16} />
-            {STATUS_META[status].label}
+            {statusLabel(status)}
           </li>
         ))}
       </ul>
     );
   }
   return (
-    <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
-      {STATUS_ORDER.map((status) => (
-        <li key={status} className="flex gap-3">
-          <StatusIcon status={status} size={22} className="mt-0.5" />
-          <p>
-            <strong className="block font-semibold">{STATUS_META[status].label}</strong>
-            <span className="block text-[0.95rem] leading-snug text-ink-2">{STATUS_META[status].description}</span>
-          </p>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ol className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+        {FIVE_LEVELS.map((status) => (
+          <li key={status ?? 'none'} className="flex gap-3">
+            <StatusIcon status={status} size={22} className="mt-0.5" />
+            <p>
+              <strong className="block font-semibold">{statusLabel(status)}</strong>
+              <span className="block text-[0.95rem] leading-snug text-ink-2">{statusDescription(status)}</span>
+            </p>
+          </li>
+        ))}
+      </ol>
+      <ProvisionalNote className="mt-4" />
+    </div>
   );
 }
 

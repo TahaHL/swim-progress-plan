@@ -54,16 +54,16 @@
   --color-buoy-ink: #7a4a05;
 
   /* Assessment depth ramp */
-  --color-st-not: #b9c6cd;
-  --color-st-not-bg: #ebf0f2;
-  --color-st-not-ink: #43565f;
-  --color-st-dev: #8ccde3;
-  --color-st-dev-bg: #e2f2f8;
-  --color-st-dev-ink: #125a78;
-  --color-st-con: #1c84b4;
-  --color-st-con-bg: #d5e9f4;
-  --color-st-con-ink: #0a4c6f;
-  --color-st-mas: #0a2a3f;
+  --color-st-np: #b9c6cd;
+  --color-st-np-bg: #ebf0f2;
+  --color-st-np-ink: #43565f;
+  --color-st-fair: #8ccde3;
+  --color-st-fair-bg: #e2f2f8;
+  --color-st-fair-ink: #125a78;
+  --color-st-good: #1c84b4;
+  --color-st-good-bg: #d5e9f4;
+  --color-st-good-ink: #0a4c6f;
+  --color-st-pass: #0a2a3f;
 
   --color-danger: #b42318;
   --color-danger-soft: #fdecea;

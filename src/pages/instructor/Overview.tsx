@@ -22,8 +22,8 @@ export default function Overview() {
   const nextSessions = upcoming.filter((s) => s.date === nextDate);
   const nextSwimmerCount = new Set(nextSessions.flatMap((s) => s.childIds)).size;
 
-  const unassessed = swimmers.filter((s) => s.plan.currentWeek > 0).reduce((n, s) => n + s.summary.unassessed, 0);
-  const mastered = swimmers.reduce((n, s) => n + s.summary.mastered, 0);
+  const unassessed = swimmers.filter((s) => s.plan.currentWeek > 0).reduce((n, s) => n + s.summary.notAssessed, 0);
+  const passed = swimmers.reduce((n, s) => n + s.summary.passed, 0);
 
   // Most recent assessment entries, newest first, with what each one changed from.
   const recent = data.assessments
@@ -37,8 +37,8 @@ export default function Overview() {
 
   const stats = [
     { label: 'Swimmers on your programmes', value: swimmers.length },
-    { label: 'Skills mastered across the group', value: mastered },
-    { label: 'Targets awaiting a first assessment', value: unassessed },
+    { label: 'Skills marked Pass across your swimmers', value: passed },
+    { label: 'Skills still Not Assessed', value: unassessed },
   ];
 
   return (
@@ -92,12 +92,12 @@ export default function Overview() {
                   <ChevronRight className="size-5 text-ink-3 sm:order-last" aria-hidden="true" />
                   <WeekBar plan={plan} className="col-start-2 sm:col-start-auto" />
                   <span className="tabular col-start-2 text-[0.95rem] sm:col-start-auto">
-                    {summary.achievedPct === null ? (
+                    {summary.assessed === 0 ? (
                       <span className="text-ink-3">No assessments yet</span>
                     ) : (
                       <>
-                        <span className="font-semibold">{summary.achievedPct}%</span>
-                        <span className="text-ink-2"> targets achieved, {summary.mastered} mastered</span>
+                        <span className="font-semibold">Pass: {summary.passed}</span>
+                        <span className="text-ink-2"> of {summary.assessed} assessed skills</span>
                       </>
                     )}
                   </span>

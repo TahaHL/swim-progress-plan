@@ -6,20 +6,27 @@ qualified teacher, signs each line. The full criteria for all 17 skills, with a 
 are in [`SWIMMING_SKILLS_REVIEW.md`](../SWIMMING_SKILLS_REVIEW.md).
 
 How to use: decide each row, write the decision, initial it. Send the decisions back and the app
-text is changed to match (one file: `src/data/skills.ts`, plus `src/lib/status.ts` for the states).
+text is changed to match (one file: `src/data/skills.ts`, plus `src/lib/status.ts` for the labels).
 
-## A. Rules that apply to every skill
+## A. The five labels
+
+The labels and their order are confirmed: **Not Assessed, Needs Practice, Fair, Good, Pass.**
+Everything below about what they mean is undecided. The descriptions shown in the app are
+provisional and are marked as such on screen.
 
 | # | Decision needed | Current demo behaviour | Decision | Initials |
 | --- | --- | --- | --- | --- |
-| A1 | What exactly separates **Developing** from **Consistent**? | "Most attempts, without support." No number. | | |
-| A2 | What exactly separates **Consistent** from **Mastered**? | "Every time, without reminders, over distance and when tired." Not tied to more than one session. | | |
-| A3 | May a float or other aid be used at Consistent? | Not allowed at Consistent, allowed at Developing. | | |
-| A4 | Should Mastered need evidence from two sessions? | No. One assessment is enough. | | |
-| A5 | Does a target count as achieved at Consistent, or only at Mastered? | Consistent or Mastered. This drives the percentage. | | |
-| A6 | Is "Mastered" the right word for parents of 6 to 8 year olds? | Used throughout, and triggers the achievement message. | | |
-| A7 | One set of criteria for all children, or different criteria by age or lesson stage? | One set. | | |
-| A8 | Are 17 targets realistic for one six-week block, or should a plan pick a subset per child? | All 17 are in every plan; the instructor picks focus skills. | | |
+| A1 | What specifically distinguishes **Fair**, **Good** and **Pass** in observable technique, consistency and independence? | Provisional one-line descriptions only. Nothing measurable. | | |
+| A2 | What does **Pass** require that **Good** does not? | Undefined. "Satisfied the agreed assessment requirements" against "some room for improvement". | | |
+| A3 | Does **Good** count as achieved for any programme target, or is **Pass** the only achieved state? | Pass only. Good is never counted as Pass. | | |
+| A4 | Is a skill marked **Pass** after one successful assessment, or only after repeated demonstration? | One assessment is enough. The app does not enforce a rule. | | |
+| A5 | Do the rules change with the swimmer's age, stage or the specific skill? | One set of rules for everyone. | | |
+| A6 | How should parents see a move between levels without reading it as guaranteed stage advancement? | The move is shown; every figure and achievement states that a Pass in a skill is not a stage award. | | |
+| A7 | May a float or other aid be used at Good, or at Pass? | Not stated. | | |
+| A8 | How do the success criteria map to the labels: how many must be met, and how reliably, for Fair, Good and Pass? | Not stated. The criteria describe the skill done well. | | |
+| A9 | Is "Needs Practice" the first assessment a new skill normally receives, or is it reserved for a skill that was tried and not managed? | Used in the demo as the usual starting level. | | |
+| A10 | Are 17 targets realistic for one six-week block, or should a plan pick a subset per child? | All 17 are in every plan; the instructor picks focus skills. | | |
+| A11 | Are the provisional descriptions acceptable as parent-facing wording? | Shown with a "provisional" notice. | | |
 
 ## B. Arbitrary distances
 
@@ -77,7 +84,7 @@ and one difficulty can hold several back.
 | # | Item | Where | Approved? |
 | --- | --- | --- | --- |
 | F1 | "Why this skill matters" paragraph for each skill | `src/data/skills.ts` | |
-| F2 | Achievement sentence for each skill | `masteredSummary` in `src/data/skills.ts` | |
+| F2 | Achievement sentence for each skill, shown when it is marked Pass | `passSummary` in `src/data/skills.ts` | |
 | F3 | Three video cue lists per skill (these become shot lists) | `src/data/skills.ts` | |
 | F4 | Supervision reminder under the videos | `src/pages/parent/SkillDetail.tsx` | |
 | F5 | "Not an official stage assessment" statement | `src/components/skills/HowCalculated.tsx` | |

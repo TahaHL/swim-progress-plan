@@ -105,7 +105,7 @@ export default function Assessments() {
                         ) : plan.currentWeek === 0 ? (
                           'Not started'
                         ) : (
-                          `Week ${plan.currentWeek}, ${summary.achievedPct === null ? 'no assessments' : `${summary.achievedPct}% achieved`}`
+                          `Week ${plan.currentWeek}, ${summary.assessed === 0 ? 'no assessments' : `Pass ${summary.passed} of ${summary.assessed}`}`
                         )}
                       </span>
                     </span>

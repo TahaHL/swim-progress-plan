@@ -37,8 +37,10 @@ export function buildAchievement(
     id,
     childId: child.id,
     skillId: skill.id,
-    title: `${child.firstName} has mastered ${skill.achievementLabel}!`,
-    message: `${skill.masteredSummary.replace('{name}', child.firstName)} Here's what we've achieved and what we're working on next.`,
+    title: `${child.firstName} has reached Pass in ${skill.name}`,
+    // A Pass is a result for one skill against this programme's own requirements. Say so every
+    // time, so it is never read as a stage award.
+    message: `${skill.passSummary.replace('{name}', child.firstName)} This is a Pass for one skill in this programme, not a swimming stage award.`,
     week,
     date,
   };
@@ -56,7 +58,7 @@ export function achievementNotification(
     parentId,
     childId: achievement.childId,
     kind: 'achievement',
-    title: `Great news! ${achievement.title}`,
+    title: `Great news! ${achievement.title}.`,
     body: achievement.message,
     createdAt,
     read: options.read,
@@ -100,8 +102,9 @@ export interface SaveAssessmentResult {
  * 1. Each status that actually changed gets a new entry in the assessment history, against the
  *    swimmer's current programme week.
  * 2. Progress figures are derived from the history, so they update automatically.
- * 3. A skill that newly reaches Mastered creates an achievement and a parent notification.
- * 4. A skill moved back down from Mastered (a correction) withdraws its achievement, so the
+ * 3. A skill that newly reaches Pass creates an achievement and a parent notification. Saving
+ *    Pass again for a skill already at Pass changes nothing, so there are no duplicates.
+ * 4. A skill moved back down from Pass (a correction) withdraws its achievement, so the
  *    parent is never left with an achievement that no longer matches the assessment.
  * 5. Any other change produces one summary notification for the parent.
  */
@@ -161,7 +164,7 @@ export function saveAssessment(
       });
       statusChanges.push({ skillId: skill.id, from, to: change.status });
 
-      if (change.status === 'mastered') {
+      if (change.status === 'pass') {
         const achievement = buildAchievement(child, skill, plan.currentWeek, input.date, makeId('ach'));
         achievements.push(achievement);
         newAchievements.push(achievement);
@@ -171,7 +174,7 @@ export function saveAssessment(
             celebrate: true,
           }),
         );
-      } else if (from === 'mastered') {
+      } else if (from === 'pass') {
         const withdrawn = new Set(
           achievements.filter((a) => a.childId === child.id && a.skillId === skill.id).map((a) => a.id),
         );
@@ -183,7 +186,7 @@ export function saveAssessment(
   }
 
   // One summary notification covering everything that is not already announced as an achievement.
-  const otherChanges = statusChanges.filter((c) => c.to !== 'mastered');
+  const otherChanges = statusChanges.filter((c) => c.to !== 'pass');
   const notesOnly = notedSkills.filter((s) => !statusChanges.some((c) => c.skillId === s.id));
   if (otherChanges.length > 0 || notesOnly.length > 0) {
     const touched = [...otherChanges.map((c) => c.skillId), ...notesOnly.map((s) => s.id)];

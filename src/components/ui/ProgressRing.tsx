@@ -46,7 +46,7 @@ export function ProgressRing({
   value: number | null;
   size?: number;
   stroke?: number;
-  /** Accessible description, e.g. "50% of assessed development targets achieved". */
+  /** Accessible description, e.g. "Skills marked Pass: 3 of 16 assessed skills, 19%". */
   label: string;
   onDeep?: boolean;
   children?: ReactNode;

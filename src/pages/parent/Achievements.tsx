@@ -9,7 +9,7 @@ import { plural } from '@/lib/format';
 import { useApp, useParentScope } from '@/store/AppStore';
 
 export default function Achievements() {
-  const { child, plan, achievements, notifications, unreadCount, summary } = useParentScope();
+  const { child, achievements, notifications, unreadCount, summary } = useParentScope();
   const { markNotificationsRead } = useApp();
   const navigate = useNavigate();
   const newestFirst = [...achievements].reverse().sort((a, b) => b.week - a.week);
@@ -20,8 +20,8 @@ export default function Achievements() {
         title="Achievements"
         subtitle={
           achievements.length > 0
-            ? `${child.firstName} has mastered ${plural(summary.mastered, 'skill')} of the ${plan.skillIds.length} in the plan.`
-            : `Skills ${child.firstName} masters during the programme are celebrated here.`
+            ? `${plural(summary.passed, 'skill')} marked Pass, of ${summary.assessed} assessed. A Pass is for one skill and is not a swimming stage award.`
+            : `Each skill marked Pass during the programme is recorded here.`
         }
       />
 
@@ -35,7 +35,7 @@ export default function Achievements() {
             </Link>
           }
         >
-          An achievement is added each time {child.firstName} is assessed as having mastered a skill.
+          An achievement is added each time one of {child.firstName}'s skills is marked Pass.
         </EmptyState>
       ) : (
         <ul className="grid gap-4 md:grid-cols-2">

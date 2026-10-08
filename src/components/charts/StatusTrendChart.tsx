@@ -1,15 +1,16 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { STATUS_ORDER, type ProgressSummary } from '@/lib/progress';
-import { STATUS_META } from '@/lib/status';
+import { NOT_ASSESSED, STATUS_META } from '@/lib/status';
 import type { SkillStatus } from '@/types';
 
 interface Row extends Record<SkillStatus, number> {
   label: string;
-  achievedPct: number | null;
+  notAssessed: number;
+  passed: number;
   assessed: number;
 }
 
-/** Bottom of the stack first, so the achieved share grows up from the baseline. */
+/** Bottom of the stack first, so skills marked Pass build up from the baseline. */
 const STACK: SkillStatus[] = [...STATUS_ORDER].reverse();
 
 function TrendTooltip({ active, payload }: { active?: boolean; payload?: { payload: Row }[] }) {
@@ -28,10 +29,17 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: { paylo
             <span className="font-semibold">{row[status]}</span>
           </li>
         ))}
+        <li className="flex items-center justify-between gap-6">
+          <span className="flex items-center gap-2 text-ink-2">
+            <span className="size-2.5 rounded-sm border border-dashed border-control" />
+            {NOT_ASSESSED.label}
+          </span>
+          <span className="font-semibold">{row.notAssessed}</span>
+        </li>
       </ul>
-      {row.achievedPct !== null && (
+      {row.assessed > 0 && (
         <p className="tabular mt-2 border-t border-line pt-2 text-ink-2">
-          {row.achievedPct}% of {row.assessed} assessed targets achieved
+          Pass: {row.passed} of {row.assessed} assessed skills
         </p>
       )}
     </div>
@@ -39,17 +47,19 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: { paylo
 }
 
 /**
- * Stacked bars: how many skills sat in each assessment state at the end of each completed week.
- * One axis, one unit (skills). Text colours come from ink tokens; the bars carry the state colours.
+ * Stacked bars: how many skills sat at each assessment level at the end of each completed week,
+ * with Not Assessed skills shown separately as an outlined segment on top.
+ * One axis, one unit (skills). Text colours come from ink tokens; the bars carry the level colours.
  */
 export function StatusTrendChart({ trend }: { trend: { week: number; summary: ProgressSummary }[] }) {
   const rows: Row[] = trend.map(({ week, summary }) => ({
     label: `Week ${week}`,
     ...summary.counts,
-    achievedPct: summary.achievedPct,
+    notAssessed: summary.notAssessed,
+    passed: summary.passed,
     assessed: summary.assessed,
   }));
-  const max = Math.max(1, ...trend.map((t) => t.summary.assessed));
+  const max = Math.max(1, ...trend.map((t) => t.summary.totalTargets));
 
   return (
     <div className="h-60 w-full">
@@ -86,6 +96,18 @@ export function StatusTrendChart({ trend }: { trend: { week: number; summary: Pr
               isAnimationActive={false}
             />
           ))}
+          {/* Not Assessed sits on top as an outline, so it reads as "no record", not as a level. */}
+          <Bar
+            dataKey="notAssessed"
+            name={NOT_ASSESSED.label}
+            stackId="skills"
+            fill="var(--color-canvas)"
+            stroke="var(--color-control)"
+            strokeWidth={1.5}
+            strokeDasharray="4 3"
+            maxBarSize={84}
+            isAnimationActive={false}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>

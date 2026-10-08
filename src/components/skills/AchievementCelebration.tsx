@@ -36,7 +36,7 @@ export function Medal({ size = 'md', ripple = false }: { size?: 'md' | 'lg'; rip
 }
 
 /**
- * Shown once, the first time the parent view opens after a skill has newly been marked Mastered.
+ * Shown once, the first time the parent view opens after a skill has newly been marked Pass.
  * The notification stays in the list afterwards; only the on-screen moment is one-off.
  */
 export function AchievementCelebration() {
