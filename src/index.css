@@ -1,0 +1,151 @@
+/*
+  Swim Progress Plan design tokens.
+  Layout concept: a quiet, pale "poolside" canvas with white working surfaces; one deep-water
+  panel per screen carries the swimmer's headline progress. Assessment states use a single
+  depth ramp (pale to deep blue), so progress reads as going deeper, never as pass or fail.
+*/
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Lexend Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("../node_modules/@fontsource-variable/lexend/files/lexend-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Source Sans 3 Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  src: url("../node_modules/@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+@theme {
+  --font-sans: "Source Sans 3 Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Lexend Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Surfaces and ink */
+  --color-canvas: #f1f5f6;
+  --color-surface: #ffffff;
+  --color-sunken: #e8eef0;
+  --color-ink: #0e2531;
+  --color-ink-2: #43565f;
+  --color-ink-3: #5c6f79;
+  --color-line: #dbe3e7;
+  --color-line-strong: #b9c6cd;
+
+  /* Brand */
+  --color-deep: #0a2a3f;
+  --color-deep-2: #123b55;
+  --color-deep-3: #1d4f6e;
+  --color-ocean: #126fae;
+  --color-ocean-dark: #0d5788;
+  --color-aqua: #2bb8b0;
+  --color-aqua-dark: #0e7d77;
+  --color-aqua-soft: #dcf3f0;
+  --color-foam: #e6f1f8;
+
+  /* Reserved for achievements only */
+  --color-buoy: #f0a63a;
+  --color-buoy-soft: #fdf2df;
+  --color-buoy-ink: #7a4a05;
+
+  /* Assessment depth ramp */
+  --color-st-not: #b9c6cd;
+  --color-st-not-bg: #ebf0f2;
+  --color-st-not-ink: #43565f;
+  --color-st-dev: #8ccde3;
+  --color-st-dev-bg: #e2f2f8;
+  --color-st-dev-ink: #125a78;
+  --color-st-con: #1c84b4;
+  --color-st-con-bg: #d5e9f4;
+  --color-st-con-ink: #0a4c6f;
+  --color-st-mas: #0a2a3f;
+
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+
+  --shadow-raised: 0 1px 2px rgb(10 42 63 / 0.06), 0 8px 24px -12px rgb(10 42 63 / 0.18);
+  --shadow-overlay: 0 24px 60px -20px rgb(10 42 63 / 0.45);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.012em;
+  }
+  button, a, input, textarea, select, summary, [role="radio"], [tabindex] {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-aqua);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  ::selection { background: var(--color-aqua-soft); }
+}
+
+@layer components {
+  /* A working surface. Used for content that is a distinct object, not for every block. */
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 1.25rem;
+  }
+  /* The deep-water panel: one per screen. Lane lines are drawn at a fixed pitch. */
+  .deep-panel {
+    color: #fff;
+    border-radius: 1.5rem;
+    background-color: var(--color-deep);
+    background-image:
+      radial-gradient(120% 90% at 100% 0%, rgb(43 184 176 / 0.22), transparent 55%),
+      repeating-linear-gradient(to bottom, transparent 0 55px, rgb(255 255 255 / 0.055) 55px 56px);
+  }
+  .field {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-line-strong);
+    background: var(--color-surface);
+    padding: 0.625rem 0.75rem;
+    color: var(--color-ink);
+  }
+  .field::placeholder { color: var(--color-ink-3); }
+  .field:focus-visible { outline-offset: 0; border-color: var(--color-aqua-dark); }
+  .tabular { font-variant-numeric: tabular-nums; }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  border-radius: 0.75rem;
+  background: linear-gradient(90deg, var(--color-sunken) 25%, #f6f9fa 50%, var(--color-sunken) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
