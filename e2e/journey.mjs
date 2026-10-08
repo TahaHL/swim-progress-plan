@@ -81,6 +81,9 @@ await step("2. Oliver's dashboard shows consistent figures", async () => {
   await expectText(page.getByTestId('next-priority'), 'Maintaining body alignment while breathing to the side.');
   await expectText(page.getByTestId('latest-update'), 'coordinating breathing without interrupting his rhythm');
   await expectText(page.getByTestId('unread-count').first(), (t) => t === '2', 'Unread notifications');
+  await expectText(page.getByTestId('metric-explanation'), 'not a prediction of passing a stage');
+  await expectText(page.getByTestId('improving'), '5 skills moved up in week 3');
+  await expectText(page.getByTestId('needs-work'), 'presses down with his leading arm');
   await page.screenshot({ path: `${SHOTS}01-parent-dashboard.png`, fullPage: true });
 });
 
@@ -121,12 +124,18 @@ await step('5. Read the skill description and assessment', async () => {
   await page.screenshot({ path: `${SHOTS}02-skill-detail.png`, fullPage: true });
 });
 
-await step('   Video placeholder opens and says it is a placeholder', async () => {
-  await page.getByRole('button', { name: /Preview video: Correct technique/ }).click();
-  const dialog = page.getByRole('dialog');
-  await expectText(dialog, 'This video has not been filmed yet');
-  await page.keyboard.press('Escape');
-  await dialog.waitFor({ state: 'detached' });
+await step('   Three video slots, each an honest placeholder with no fake play button', async () => {
+  const tabs = page.getByRole('tablist', { name: 'Videos for Side breathing' });
+  for (const [tab, heading] of [
+    ['Correct technique', 'What to look for'],
+    ['Common mistakes', 'Mistakes to watch for'],
+    ['What parents should notice', 'From the poolside'],
+  ]) {
+    await tabs.getByRole('tab', { name: tab }).click();
+    await expectText(page.locator('#video-panel'), heading);
+    await expectText(page.getByTestId('video-placeholder'), 'Video not yet filmed');
+  }
+  expect((await page.locator('#video-panel button, #video-panel video').count()) === 0, 'Placeholder should not offer playback');
 });
 
 console.log('\nInstructor experience');
@@ -154,6 +163,24 @@ await step('8. Change the skill status', async () => {
   await group.getByRole('radio', { name: 'Consistent' }).click();
   await expectText(page.getByTestId('unsaved-count'), '1 unsaved change');
   await expectText(page.getByTestId('assess-br-side'), 'Was Developing');
+  await page.getByRole('button', { name: 'Notes for Side breathing' }).click();
+  await page.getByLabel('Coaching note for Sarah').fill('Oliver turned his head to the side on four breaths in a row today.');
+});
+
+await step('   Unsaved work survives leaving the sheet and coming back', async () => {
+  await page.getByRole('tab', { name: 'History' }).click();
+  await sidebar.getByRole('link', { name: 'Sessions' }).click();
+  await heading('Sessions').waitFor();
+  await sidebar.getByRole('link', { name: 'Assessments' }).click();
+  await heading('Assessments').waitFor();
+  await expectText(page.getByTestId('pick-child-oliver'), 'Unsaved changes');
+  await expectText(page.getByTestId('unsaved-count'), '1 unsaved change for Oliver');
+  await page.goBack();
+  await page.goBack();
+  await heading('Oliver Williams').waitFor();
+  await page.getByRole('tab', { name: 'Assess' }).click();
+  const group = page.getByRole('radiogroup', { name: 'Assessment for Side breathing' });
+  expect(await group.getByRole('radio', { name: 'Consistent' }).isChecked(), 'The staged change was lost');
 });
 
 await step('9. Save the update', async () => {
@@ -186,6 +213,7 @@ await step('11. The new assessment appears', async () => {
   await page.getByRole('link', { name: /Side breathing/ }).first().click();
   await heading('Side breathing').waitFor();
   await expectText(page.getByTestId('skill-status'), (t) => t === 'Consistent', 'Current assessment');
+  await expectText(page.getByTestId('skill-feedback'), 'four breaths in a row today');
   await sidebar.getByRole('link', { name: 'Progress Journey' }).click();
   await expectText(page.getByTestId('journey-latest-pct'), '56%');
   await expectText(page.getByTestId('week-3'), 'Side breathing');
@@ -209,6 +237,10 @@ await step('13. An achievement appears when a skill is newly Mastered', async ()
   expect(await group.getByRole('radio', { name: 'Mastered' }).isChecked(), 'Arrow key should select Mastered');
   await page.getByRole('button', { name: 'Save assessment' }).click();
   await expectText(page.getByTestId('save-result'), 'Achievement sent to Sarah: Oliver has mastered side breathing!');
+  // Selecting Mastered again is not a change, so there is nothing to save and no second achievement.
+  await group.getByRole('radio', { name: 'Mastered' }).click();
+  await expectText(page.getByTestId('unsaved-count'), 'No unsaved changes');
+  expect(await page.getByRole('button', { name: 'Save assessment' }).isDisabled(), 'Save should be disabled with nothing to save');
   await page.getByTestId('save-result').getByRole('button', { name: 'View as parent' }).click();
 
   const dialog = page.getByRole('dialog', { name: /Oliver has mastered side breathing/ });
@@ -266,7 +298,7 @@ await step('Correcting a Mastered skill withdraws its achievement', async () => 
   await expectText(page.getByTestId('save-result'), '1 achievement withdrawn');
 });
 
-await step('Instructor can send an update and set the next priority', async () => {
+await step('Notes tab: instructor can send an update with objectives and set the next priority', async () => {
   await page.goto(`${BASE}#/instructor/swimmers/child-oliver?tab=notes`);
   await page.getByLabel('How the session went').fill('Oliver kept his leading arm long on two breaths today.');
   await page.getByRole('button', { name: 'Send update' }).click();
@@ -296,6 +328,100 @@ await step('Reset demo data restores the original figures', async () => {
   await page.goto(`${BASE}#/parent`);
   await expectText(pct, (t) => t === '50%', 'Targets achieved after reset');
   await expectText(page.getByTestId('latest-achievement'), 'consistent flutter kicking');
+});
+
+await step('A class of four can be assessed in one pass: 3 skills, a note and one save each', async () => {
+  await page.goto(`${BASE}#/instructor/assessments`);
+  await heading('Assessments').waitFor();
+  const klass = [
+    ['Oliver', [['Relaxed ankles', 'Consistent'], ['Effective hand entry', 'Consistent'], ['Breathing rhythm', 'Developing']]],
+    ['Isla', [['Kick generated from the hips', 'Consistent'], ['Relaxed ankles', 'Consistent'], ['Effective hand entry', 'Developing']]],
+    ['Noah', [['Body alignment while breathing', 'Consistent'], ['Breathing rhythm', 'Consistent'], ['Maintaining technique over distance', 'Consistent']]],
+    ['Amelia', [['Horizontal alignment', 'Consistent'], ['Head position', 'Consistent'], ['Controlled arm recovery', 'Developing']]],
+  ];
+  let taps = 0;
+  const started = Date.now();
+  for (let i = 0; i < klass.length; i += 1) {
+    const [name, skills] = klass[i];
+    await page.getByRole('heading', { level: 2, name: new RegExp(`^${name} `) }).waitFor();
+    for (const [skill, state] of skills) {
+      await page.getByRole('radiogroup', { name: `Assessment for ${skill}` }).getByRole('radio', { name: state }).click();
+      taps += 1;
+    }
+    await page.getByLabel(/^Session note/).fill(`${name} worked hard today and made progress on three skills.`);
+    await expectText(page.getByTestId('unsaved-count'), `4 unsaved changes for ${name}`);
+    await page.getByRole('button', { name: 'Save assessment' }).click();
+    taps += 1;
+    await expectText(page.getByTestId('save-result'), '3 skills reassessed');
+    await expectText(page.getByTestId('save-result'), 'Session note sent');
+    if (i < klass.length - 1) {
+      await page.getByTestId('save-result').getByRole('button', { name: new RegExp(`^Next: ${klass[i + 1][0]}`) }).click();
+      taps += 1;
+    }
+  }
+  for (const id of ['oliver', 'isla', 'noah', 'amelia']) {
+    await expectText(page.getByTestId(`pick-child-${id}`), 'Updated today');
+  }
+  console.log(`        (${taps} taps and 4 typed notes for four swimmers; scripted run took ${((Date.now() - started) / 1000).toFixed(1)}s, which is not a human timing)`);
+  await page.screenshot({ path: `${SHOTS}08-class-assessed.png`, fullPage: true });
+  await page.goto(`${BASE}#/parent`);
+  await expectText(page.getByTestId('latest-update'), 'Oliver worked hard today');
+});
+
+await step('Parent view with no assessments shows clear empty states', async () => {
+  await page.evaluate(() => {
+    const key = 'swim-progress-plan.demo.v1';
+    const data = JSON.parse(localStorage.getItem(key));
+    const mine = (x) => x.childId === 'child-oliver';
+    data.assessments = data.assessments.filter((x) => !mine(x));
+    data.achievements = data.achievements.filter((x) => !mine(x));
+    data.updates = data.updates.filter((x) => !mine(x));
+    data.notifications = data.notifications.filter((x) => !mine(x));
+    const plan = data.plans.find(mine);
+    plan.currentWeek = 0;
+    plan.focusSkillIds = [];
+    plan.skillNotes = {};
+    localStorage.setItem(key, JSON.stringify(data));
+  });
+  await page.reload();
+  await heading('Welcome back, Sarah!').waitFor();
+  const main = page.locator('main');
+  await expectText(main, 'No assessments yet');
+  await expectText(main, 'Nothing has been assessed yet');
+  await expectText(main, 'will post an update after the first session');
+  await expectText(main, 'it will be celebrated here');
+  await page.screenshot({ path: `${SHOTS}09-parent-empty-state.png`, fullPage: true });
+  await page.goto(`${BASE}#/parent/skills/br-side`);
+  await expectText(page.getByTestId('skill-status'), 'Not yet assessed');
+  await expectText(main, 'No feedback has been written for this skill yet');
+  await page.goto(`${BASE}#/parent/journey`);
+  await expectText(main, 'A comparison becomes available after the second session');
+  await page.goto(`${BASE}#/parent/achievements`);
+  await expectText(main, 'No achievements yet');
+  await page.getByRole('button', { name: /^Notifications/ }).last().click();
+  await expectText(page.getByRole('dialog', { name: 'Notifications' }), 'No notifications yet');
+  await page.keyboard.press('Escape');
+  // Put the original demo data back.
+  await page.goto(`${BASE}#/parent/profile`);
+  await page.getByRole('button', { name: 'Reset demo data' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Reset demo data' }).click();
+  await page.goto(`${BASE}#/parent`);
+  await expectText(pct, (t) => t === '50%', 'Targets achieved after reset');
+});
+
+await step('Tablet widths: no sideways scrolling on the main screens', async () => {
+  for (const width of [768, 1024]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const route of ['/parent', '/parent/skills/br-side', '/parent/journey', '/instructor/assessments', '/instructor/swimmers/child-oliver']) {
+      await page.goto(`${BASE}#${route}`);
+      await page.locator('main h1').waitFor();
+      await page.waitForTimeout(250);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow <= 0, `${route} at ${width}px scrolls sideways by ${overflow}px`);
+    }
+  }
+  await page.screenshot({ path: `${SHOTS}10-tablet-assessments.png`, fullPage: true });
+  await page.setViewportSize({ width: 1366, height: 900 });
 });
 
 await step('Keyboard: skip link, visible focus, and Enter activates the demo entry', async () => {

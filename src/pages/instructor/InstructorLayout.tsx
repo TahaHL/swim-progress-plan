@@ -17,6 +17,7 @@ export default function InstructorLayout() {
   const instructor = data.instructors.find((i) => i.id === DEMO_INSTRUCTOR_ID);
   return (
     <AppShell
+      variant="instructor"
       nav={NAV}
       navLabel="Instructor navigation"
       user={{ name: instructor ? fullName(instructor) : 'Instructor', detail: instructor?.qualification ?? '' }}

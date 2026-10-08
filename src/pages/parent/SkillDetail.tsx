@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router';
 import { LifeBuoy, MessageSquareText, SearchX, Target } from 'lucide-react';
-import { VideoCard } from '@/components/skills/VideoCard';
+import { VideoSection } from '@/components/skills/VideoSection';
 import { StatusBadge, StatusIcon } from '@/components/ui/Status';
 import { Avatar, EmptyState, PageHeader, buttonClass, cx } from '@/components/ui/primitives';
 import { PARTNER } from '@/config/demo';
@@ -161,11 +161,9 @@ export default function SkillDetail() {
             <h2 id="video-title" className="text-xl font-semibold">
               Video demonstration
             </h2>
-            <p className="mt-1 text-ink-2">See the skill done well, and the mistakes that are common while learning it.</p>
-            <div className="mt-4 grid gap-x-6 gap-y-8 sm:grid-cols-2">
-              {skill.videos.map((video) => (
-                <VideoCard key={video.id} video={video} skillName={skill.name} />
-              ))}
+            <p className="mt-1 text-ink-2">The skill done well, the mistakes that are common while learning it, and what to watch for from the poolside.</p>
+            <div className="mt-4">
+              <VideoSection videos={skill.videos} skillName={skill.name} />
             </div>
             <p className="mt-6 flex gap-2.5 rounded-xl bg-sunken px-3.5 py-3 text-[0.95rem] leading-snug text-ink-2">
               <LifeBuoy className="mt-0.5 size-4 shrink-0 text-ink-3" aria-hidden="true" />

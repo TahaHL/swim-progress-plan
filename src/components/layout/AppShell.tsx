@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { motion, useReducedMotion } from 'motion/react';
 import { LogOut, RotateCcw, TriangleAlert, type LucideIcon } from 'lucide-react';
-import { Button, cx } from '@/components/ui/primitives';
+import { Button, ContentSkeleton, cx } from '@/components/ui/primitives';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useApp } from '@/store/AppStore';
@@ -124,7 +124,10 @@ export function AppShell({
   user,
   headerExtras,
   navLabel,
+  variant,
 }: {
+  /** Parent screens use a light sidebar, instructor screens a deep one, so the two are never confused. */
+  variant: Role;
   nav: NavItem[];
   user: { name: string; detail: string };
   /** Rendered at the right of the header (for example the notification bell). */
@@ -148,6 +151,9 @@ export function AppShell({
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
+  const deep = variant === 'instructor';
+  const roleLabel = deep ? 'Instructor view' : 'Parent view';
+
   const leave = () => {
     exitDemo();
     navigate('/');
@@ -169,9 +175,15 @@ export function AppShell({
 
       <div className="lg:flex">
         {/* Desktop sidebar */}
-        <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-6 lg:flex">
-          <Logo className="px-2" />
-          <nav aria-label={navLabel} className="mt-8 flex flex-col gap-1">
+        <aside
+          className={cx(
+            'sticky top-0 hidden h-dvh w-64 shrink-0 flex-col px-4 py-6 lg:flex',
+            deep ? 'bg-deep-2 text-white' : 'border-r border-line bg-surface',
+          )}
+        >
+          <Logo className="px-2" onDeep={deep} />
+          <p className={cx('mt-3 px-2 text-sm font-semibold', deep ? 'text-white/70' : 'text-ink-3')}>{roleLabel}</p>
+          <nav aria-label={navLabel} className="mt-6 flex flex-col gap-1">
             {nav.map((item) => (
               <NavLink
                 key={item.to}
@@ -180,7 +192,13 @@ export function AppShell({
                 className={({ isActive }) =>
                   cx(
                     'flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold transition-colors',
-                    isActive ? 'bg-deep text-white' : 'text-ink-2 hover:bg-canvas hover:text-ink',
+                    deep
+                      ? isActive
+                        ? 'bg-white text-deep'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      : isActive
+                        ? 'bg-deep text-white'
+                        : 'text-ink-2 hover:bg-canvas hover:text-ink',
                   )
                 }
               >
@@ -189,13 +207,16 @@ export function AppShell({
               </NavLink>
             ))}
           </nav>
-          <div className="mt-auto border-t border-line pt-4">
+          <div className={cx('mt-auto border-t pt-4', deep ? 'border-white/15' : 'border-line')}>
             <p className="px-2 font-semibold">{user.name}</p>
-            <p className="px-2 text-sm text-ink-2">{user.detail}</p>
+            <p className={cx('px-2 text-sm', deep ? 'text-white/70' : 'text-ink-2')}>{user.detail}</p>
             <button
               type="button"
               onClick={leave}
-              className="mt-3 flex min-h-10 w-full items-center gap-2 rounded-xl px-2 text-[0.95rem] font-semibold text-ink-2 hover:bg-canvas hover:text-ink"
+              className={cx(
+                'mt-3 flex min-h-10 w-full items-center gap-2 rounded-xl px-2 text-[0.95rem] font-semibold',
+                deep ? 'text-white/80 hover:bg-white/10 hover:text-white' : 'text-ink-2 hover:bg-canvas hover:text-ink',
+              )}
             >
               <LogOut className="size-4" aria-hidden="true" />
               Exit demo
@@ -210,7 +231,9 @@ export function AppShell({
             style={{ top: 'env(safe-area-inset-top, 0px)' }}
           >
             <Logo size={32} />
-            {headerExtras}
+            {headerExtras ?? (
+              <span className="rounded-full bg-deep px-3 py-1 text-sm font-semibold text-white">{roleLabel}</span>
+            )}
           </div>
           {/* Desktop header */}
           {headerExtras && (
@@ -232,7 +255,9 @@ export function AppShell({
               animate={{ opacity: 1 }}
               transition={{ duration: 0.22 }}
             >
-              <Outlet />
+              <Suspense fallback={<ContentSkeleton />}>
+                <Outlet />
+              </Suspense>
             </motion.div>
           </main>
         </div>

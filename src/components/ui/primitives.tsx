@@ -199,3 +199,16 @@ export function PageSkeleton() {
     </div>
   );
 }
+
+/** Shown inside the app shell while a page is being loaded. */
+export function ContentSkeleton() {
+  return (
+    <div role="status" aria-live="polite">
+      <span className="sr-only">Loading</span>
+      <div className="skeleton h-8 w-56" />
+      <div className="skeleton mt-3 h-5 w-80 max-w-full" />
+      <div className="skeleton mt-8 h-40 w-full !rounded-3xl" />
+      <div className="skeleton mt-6 h-64 w-full" />
+    </div>
+  );
+}

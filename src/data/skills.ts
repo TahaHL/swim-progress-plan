@@ -4,7 +4,8 @@
  * Front crawl is implemented in depth for the prototype. To add another stroke, add its skills
  * here and reference their ids from a DevelopmentPlan.
  *
- * VIDEOS: every skill has two video slots (correct technique, common mistakes). They render as
+ * VIDEOS: every skill has three video slots (correct technique, common mistakes, what parents
+ * should notice). They render as
  * clearly labelled placeholders until footage exists. To use real footage, put the file in
  * /public/videos and set `src` (and optionally `poster`) in VIDEO_SOURCES at the bottom of this
  * file. No other change is needed.
@@ -22,9 +23,83 @@ export const CATEGORIES: SkillCategory[] = [
 export const CATEGORY_IDS: SkillCategoryId[] = CATEGORIES.map((c) => c.id);
 
 interface SkillSeed extends Omit<SwimmingSkill, 'stroke' | 'videos'> {
+  /** Points for the "correct technique" video. */
   correct: string[];
+  /** Points for the "common mistakes" video. */
   mistakes: string[];
 }
+
+/** Plain-language cues for the "what parents should notice" video: visible from the poolside. */
+const POOLSIDE_CUES: Record<string, string[]> = {
+  'bp-alignment': [
+    'Heels making a small splash at the surface',
+    'The back and hips visible at the surface, not sinking'
+  ],
+  'bp-head': [
+    'The back of the head showing, not the face',
+    'A head that stays still while the arms move'
+  ],
+  'bp-streamline': [
+    'A long, quiet glide off the wall before any kicking',
+    'Arms covering the ears'
+  ],
+  'kick-alternating': [
+    'A steady patter of small splashes',
+    'Legs that stay close together'
+  ],
+  'kick-hips': [
+    'Legs that look long and mostly straight',
+    'Knees staying under the water'
+  ],
+  'kick-ankles': [
+    'Pointed toes',
+    'Feet that look loose, not stiff'
+  ],
+  'kick-rhythm': [
+    'Splashing that does not stop, even during a breath',
+    'The same kick speed at the end of the swim as at the start'
+  ],
+  'arm-recovery': [
+    'Arms lifting clear of the water',
+    'Elbows pointing up as each arm comes over'
+  ],
+  'arm-entry': [
+    'Hands going in quietly, without a slap',
+    'Hands entering in front of the shoulders, not across the head'
+  ],
+  'arm-alternating': [
+    'One arm always on the move',
+    'Hands passing the thighs at the end of each pull'
+  ],
+  'br-exhale': [
+    'Bubbles around the face',
+    'No gasping when the head turns'
+  ],
+  'br-side': [
+    'One ear staying in the water during the breath',
+    'The head turning to the side, not lifting to look forwards'
+  ],
+  'br-alignment': [
+    'The front arm staying stretched out during the breath',
+    'Legs staying up at the surface while breathing'
+  ],
+  'br-return': [
+    'The face going back in promptly after the breath',
+    'Eyes returning to the pool floor'
+  ],
+  'co-armleg': [
+    'Legs still kicking while the arms pull',
+    'A smooth swim without stops and starts'
+  ],
+  'co-rhythm': [
+    'Breaths taken at regular intervals',
+    'Arms that keep moving during each breath'
+  ],
+  'co-distance': [
+    'The end of the swim looking as tidy as the start',
+    'No stopping to stand part-way'
+  ]
+};
 
 const SEEDS: SkillSeed[] = [
   // ---------------------------------------------------------------- Body position
@@ -437,7 +512,7 @@ const SEEDS: SkillSeed[] = [
 ];
 
 /**
- * Drop real footage in here. Key format: "<skill id>:<correct|mistakes>".
+ * Drop real footage in here. Key format: "<skill id>:<correct|mistakes|notice>".
  * Example:
  *   'br-side:correct': { src: 'videos/side-breathing-correct.mp4', poster: 'videos/side-breathing-correct.jpg' },
  */
@@ -463,6 +538,15 @@ function buildVideos(seed: SkillSeed): SkillVideo[] {
       plannedDuration: '1:00',
       lookFor: seed.mistakes,
       ...VIDEO_SOURCES[`${seed.id}:mistakes`],
+    },
+    {
+      id: `${seed.id}:notice`,
+      kind: 'notice',
+      title: 'What parents should notice',
+      caption: 'What this skill looks like from the poolside, so you can spot progress yourself.',
+      plannedDuration: '0:30',
+      lookFor: POOLSIDE_CUES[seed.id] ?? [],
+      ...VIDEO_SOURCES[`${seed.id}:notice`],
     },
   ];
 }

@@ -1,26 +1,21 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'motion/react';
-import { CalendarClock, CircleCheck, Eye, NotebookPen, RotateCcw } from 'lucide-react';
+import { ArrowRight, CalendarClock, CircleCheck, Eye, ListFilter, NotebookPen, RotateCcw } from 'lucide-react';
 import { StatusBadge, StatusIcon } from '@/components/ui/Status';
 import { useToast } from '@/components/ui/Toast';
 import { Button, EmptyState, cx } from '@/components/ui/primitives';
 import { DEMO_PARENT_ID } from '@/config/demo';
 import { CATEGORIES } from '@/data/skills';
-import type { SaveAssessmentResult, SkillChange } from '@/lib/assessmentService';
+import type { SkillChange } from '@/lib/assessmentService';
 import { formatLong, formatMedium } from '@/lib/dates';
 import { plural } from '@/lib/format';
-import { STATUS_ORDER, currentStatus } from '@/lib/progress';
+import { STATUS_ORDER, currentStatus, isAchieved } from '@/lib/progress';
 import { STATUS_META } from '@/lib/status';
-import { useApp } from '@/store/AppStore';
+import { useApp, type SessionResult } from '@/store/AppStore';
+import { EMPTY_DRAFT, useAssessmentDrafts, type SkillDraft } from '@/store/AssessmentDrafts';
 import { fullName, planSkills, selectSwimmer } from '@/store/selectors';
 import type { SkillStatus, SwimmingSkill } from '@/types';
-
-interface Draft {
-  status?: SkillStatus;
-  feedback?: string;
-  nextTarget?: string;
-}
 
 /** Four-way choice for one skill. Behaves as a radio group: arrow keys move and select. */
 function StatusRadio({
@@ -64,10 +59,15 @@ function StatusRadio({
               'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border px-1 text-[0.78rem] leading-none font-semibold transition-colors sm:min-h-11 sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-sm',
               selected
                 ? cx(STATUS_META[status].chip, 'border-transparent ring-2 ring-deep ring-inset')
-                : 'border-line bg-surface text-ink-2 hover:border-line-strong hover:text-ink',
+                : 'border-control bg-surface text-ink-2 hover:border-ink-2 hover:text-ink',
             )}
           >
-            <StatusIcon status={status} size={16} inverse={selected && status === 'mastered'} className={selected ? undefined : 'opacity-55'} />
+            <StatusIcon
+              status={status}
+              size={16}
+              inverse={selected && status === 'mastered'}
+              className={selected ? undefined : 'opacity-60'}
+            />
             {STATUS_META[status].short}
           </button>
         );
@@ -90,13 +90,13 @@ function SkillRow({
 }: {
   skill: SwimmingSkill;
   saved: SkillStatus | null;
-  draft: Draft | undefined;
+  draft: SkillDraft | undefined;
   savedFeedback: string;
   savedTarget: string;
   parentName: string;
   notesOpen: boolean;
   onToggleNotes: () => void;
-  onChange: (patch: Draft) => void;
+  onChange: (patch: SkillDraft) => void;
   onUndo: () => void;
 }) {
   const value = draft?.status ?? saved;
@@ -107,11 +107,8 @@ function SkillRow({
   const changed = statusChanged || notesChanged;
 
   return (
-    <li
-      data-testid={`assess-${skill.id}`}
-      className={cx('px-4 py-4 transition-colors sm:px-5', changed && 'bg-foam')}
-    >
-      <div className="grid gap-x-5 gap-y-3 lg:grid-cols-[minmax(0,1fr)_27rem] lg:items-center">
+    <li data-testid={`assess-${skill.id}`} className={cx('px-4 py-4 transition-colors sm:px-5', changed && 'bg-foam')}>
+      <div className="grid gap-x-5 gap-y-3 xl:grid-cols-[minmax(0,1fr)_27rem] xl:items-center">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-display font-medium">{skill.name}</p>
@@ -157,10 +154,13 @@ function SkillRow({
       </div>
 
       {notesOpen && (
-        <div id={`notes-${skill.id}`} className="mt-4 grid gap-4 border-t border-line pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)]">
+        <div
+          id={`notes-${skill.id}`}
+          className="mt-4 grid gap-4 border-t border-line pt-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)]"
+        >
           <div>
             <label htmlFor={`feedback-${skill.id}`} className="mb-1 block text-sm font-semibold">
-              Feedback for {parentName}
+              Coaching note for {parentName}
             </label>
             <textarea
               id={`feedback-${skill.id}`}
@@ -198,19 +198,34 @@ function SkillRow({
   );
 }
 
+type Filter = 'all' | 'working';
+
 /**
- * The instructor's assessment sheet for one swimmer. Changes are staged, shown as unsaved, and
- * committed together with "Save assessment". Saving updates the history, the progress figures,
- * the parent's dashboard and, for a newly mastered skill, the parent's achievements.
+ * The instructor's assessment sheet for one swimmer: a state for each skill, an optional note
+ * for the parent and the next coaching priority, all committed with one "Save assessment".
+ * Unsaved work is held in the drafts store, so it survives moving to another swimmer or page.
+ * Saving updates the history, the progress figures, the parent's dashboard and, for a newly
+ * mastered skill, the parent's achievements.
  */
-export function AssessmentPanel({ childId }: { childId: string }) {
-  const { data, saveAssessment, enterAs } = useApp();
+export function AssessmentPanel({
+  childId,
+  next,
+}: {
+  childId: string;
+  /** The next swimmer to assess, offered once this one is saved. */
+  next?: { name: string; onSelect: () => void };
+}) {
+  const { data, saveSession, enterAs } = useApp();
+  const { drafts, update, clear } = useAssessmentDrafts();
   const toast = useToast();
   const navigate = useNavigate();
   const swimmer = selectSwimmer(data, childId);
-  const [draft, setDraft] = useState<Record<string, Draft>>({});
+  const draft = drafts[childId] ?? EMPTY_DRAFT;
   const [openNotes, setOpenNotes] = useState<string | null>(null);
-  const [result, setResult] = useState<SaveAssessmentResult | null>(null);
+  const [result, setResult] = useState<SessionResult | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  /** Skills saved in this sitting stay visible under the "Working on" filter. */
+  const [justSaved, setJustSaved] = useState<string[]>([]);
 
   const skills = useMemo(() => (swimmer ? planSkills(swimmer.plan) : []), [swimmer]);
 
@@ -218,7 +233,7 @@ export function AssessmentPanel({ childId }: { childId: string }) {
     if (!swimmer) return [];
     const list: SkillChange[] = [];
     for (const skill of skills) {
-      const d = draft[skill.id];
+      const d = draft.skills[skill.id];
       if (!d) continue;
       const saved = currentStatus(data.assessments, childId, skill.id);
       const note = swimmer.plan.skillNotes[skill.id] ?? {};
@@ -229,7 +244,7 @@ export function AssessmentPanel({ childId }: { childId: string }) {
       if (change.status || change.feedback !== undefined || change.nextTarget !== undefined) list.push(change);
     }
     return list;
-  }, [draft, skills, swimmer, data.assessments, childId]);
+  }, [draft.skills, skills, swimmer, data.assessments, childId]);
 
   if (!swimmer) return null;
   const { child, parent, plan } = swimmer;
@@ -237,23 +252,35 @@ export function AssessmentPanel({ childId }: { childId: string }) {
   if (plan.currentWeek < 1) {
     return (
       <EmptyState icon={CalendarClock} title="Assessments open after the first session">
-        {child.firstName}'s programme starts on {swimmer.nextSession ? formatLong(swimmer.nextSession.date) : 'a date to be confirmed'}.
-        The baseline assessment is recorded in that session.
+        {child.firstName}'s programme starts on{' '}
+        {swimmer.nextSession ? formatLong(swimmer.nextSession.date) : 'a date to be confirmed'}. The baseline assessment
+        is recorded in that session.
       </EmptyState>
     );
   }
 
   const lastSession = data.sessions.find((s) => s.childIds.includes(child.id) && s.week === plan.currentWeek);
   const isDemoChild = child.parentId === DEMO_PARENT_ID;
+  const note = draft.note;
+  const priority = draft.priority ?? plan.nextPriority;
+  const priorityChanged = priority.trim() !== '' && priority.trim() !== plan.nextPriority;
+  const unsaved = changes.length + (note.trim() ? 1 : 0) + (priorityChanged ? 1 : 0);
 
-  const update = (skillId: string, patch: Draft) => {
+  const statusOf = (skill: SwimmingSkill) => currentStatus(data.assessments, child.id, skill.id);
+  const workingCount = skills.filter((s) => !isAchieved(statusOf(s))).length;
+  const visible =
+    filter === 'all'
+      ? skills
+      : skills.filter((s) => !isAchieved(statusOf(s)) || draft.skills[s.id] !== undefined || justSaved.includes(s.id));
+
+  const updateSkill = (skillId: string, patch: SkillDraft) => {
     setResult(null);
-    setDraft((d) => ({ ...d, [skillId]: { ...d[skillId], ...patch } }));
+    update(child.id, (d) => ({ ...d, skills: { ...d.skills, [skillId]: { ...d.skills[skillId], ...patch } } }));
   };
-  const undo = (skillId: string) =>
-    setDraft((d) => {
-      const { [skillId]: _removed, ...rest } = d;
-      return rest;
+  const undoSkill = (skillId: string) =>
+    update(child.id, (d) => {
+      const { [skillId]: _removed, ...rest } = d.skills;
+      return { ...d, skills: rest };
     });
 
   const viewAsParent = () => {
@@ -263,8 +290,9 @@ export function AssessmentPanel({ childId }: { childId: string }) {
 
   const save = () => {
     try {
-      const saved = saveAssessment(child.id, changes);
-      setDraft({});
+      const saved = saveSession(child.id, { changes, note, priority: priorityChanged ? priority : undefined });
+      setJustSaved((ids) => [...new Set([...ids, ...changes.map((c) => c.skillId)])]);
+      clear(child.id);
       setOpenNotes(null);
       setResult(saved);
       toast({ title: 'Assessment saved', description: `${parent.firstName}'s dashboard now shows the update.` });
@@ -277,13 +305,36 @@ export function AssessmentPanel({ childId }: { childId: string }) {
     }
   };
 
+  const filters: { id: Filter; label: string; count: number }[] = [
+    { id: 'all', label: 'All skills', count: skills.length },
+    { id: 'working', label: 'Working on', count: workingCount },
+  ];
+
   return (
     <div>
-      <p className="mb-4 text-ink-2">
-        Recording against week {plan.currentWeek}
-        {lastSession && ` (session on ${formatMedium(lastSession.date)})`}. Select a state for each skill you observed,
-        then save.
-      </p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <p className="max-w-prose text-ink-2">
+          Recording against week {plan.currentWeek}
+          {lastSession && ` (session on ${formatMedium(lastSession.date)})`}. Set a state for each skill you observed,
+          add a note if you want to, then save once.
+        </p>
+        <div role="group" aria-label="Skills shown" className="inline-flex shrink-0 rounded-xl bg-sunken p-1">
+          {filters.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              aria-pressed={filter === f.id}
+              onClick={() => setFilter(f.id)}
+              className={cx(
+                'tabular min-h-9 rounded-lg px-3 text-[0.95rem] font-semibold transition-colors',
+                filter === f.id ? 'bg-surface text-ink shadow-raised' : 'text-ink-2 hover:text-ink',
+              )}
+            >
+              {f.label} <span className="font-normal text-ink-3">{f.count}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <AnimatePresence>
         {result && (
@@ -298,16 +349,14 @@ export function AssessmentPanel({ childId }: { childId: string }) {
             <div className="flex min-w-0 gap-3">
               <CircleCheck className="mt-0.5 size-5 shrink-0 text-aqua-dark" aria-hidden="true" />
               <div className="min-w-0">
-                <p className="font-display font-semibold">
-                  Saved. {fullName(parent)}'s dashboard has been updated.
-                </p>
+                <p className="font-display font-semibold">Saved. {fullName(parent)}'s dashboard has been updated.</p>
                 <ul className="tabular mt-1 text-[0.95rem] leading-snug text-ink-2">
                   {result.statusChanges.length > 0 && (
-                    <li>
-                      {plural(result.statusChanges.length, 'skill')} reassessed and added to the history.
-                    </li>
+                    <li>{plural(result.statusChanges.length, 'skill')} reassessed and added to the history.</li>
                   )}
-                  {result.notesUpdated > 0 && <li>Notes updated on {plural(result.notesUpdated, 'skill')}.</li>}
+                  {result.notesUpdated > 0 && <li>Coaching notes updated on {plural(result.notesUpdated, 'skill')}.</li>}
+                  {result.noteSent && <li>Session note sent to {parent.firstName}.</li>}
+                  {result.priorityChanged && <li>Next coaching priority updated.</li>}
                   {result.before.achievedPct !== null && result.after.achievedPct !== null && (
                     <li>
                       Targets achieved:{' '}
@@ -327,92 +376,156 @@ export function AssessmentPanel({ childId }: { childId: string }) {
                     </li>
                   ))}
                   {result.removedAchievements > 0 && (
-                    <li>{plural(result.removedAchievements, 'achievement')} withdrawn, because the skill is no longer marked Mastered.</li>
+                    <li>
+                      {plural(result.removedAchievements, 'achievement')} withdrawn, because the skill is no longer
+                      marked Mastered.
+                    </li>
                   )}
                 </ul>
               </div>
             </div>
-            {isDemoChild ? (
-              <Button variant="primary" size="sm" onClick={viewAsParent}>
-                <Eye className="size-4" aria-hidden="true" />
-                View as parent
-              </Button>
-            ) : (
-              <p className="max-w-56 text-sm text-ink-2">The parent demo is linked to Oliver Williams, so open his plan to see the parent view change.</p>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {isDemoChild && (
+                <Button variant={next ? 'secondary' : 'primary'} size="sm" onClick={viewAsParent}>
+                  <Eye className="size-4" aria-hidden="true" />
+                  View as parent
+                </Button>
+              )}
+              {next && (
+                <Button variant="primary" size="sm" onClick={next.onSelect}>
+                  Next: {next.name}
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-6">
-        {CATEGORIES.map((category) => {
-          const inCategory = skills.filter((s) => s.categoryId === category.id);
-          if (inCategory.length === 0) return null;
-          return (
-            <section key={category.id} aria-labelledby={`assess-${category.id}`}>
-              <h3 id={`assess-${category.id}`} className="mb-2 text-lg font-semibold">
-                {category.name}
-              </h3>
-              <ul className="panel divide-y divide-line overflow-hidden">
-                {inCategory.map((skill) => {
-                  const note = plan.skillNotes[skill.id] ?? {};
-                  return (
-                    <SkillRow
-                      key={skill.id}
-                      skill={skill}
-                      saved={currentStatus(data.assessments, child.id, skill.id)}
-                      draft={draft[skill.id]}
-                      savedFeedback={note.feedback ?? ''}
-                      savedTarget={note.nextTarget ?? ''}
-                      parentName={parent.firstName}
-                      notesOpen={openNotes === skill.id}
-                      onToggleNotes={() => setOpenNotes((id) => (id === skill.id ? null : skill.id))}
-                      onChange={(patch) => update(skill.id, patch)}
-                      onUndo={() => undo(skill.id)}
-                    />
-                  );
-                })}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
+      {visible.length === 0 ? (
+        <EmptyState
+          icon={ListFilter}
+          title="Every target is achieved"
+          action={
+            <Button variant="secondary" onClick={() => setFilter('all')}>
+              Show all skills
+            </Button>
+          }
+        >
+          {child.firstName} is Consistent or Mastered in every skill in the plan.
+        </EmptyState>
+      ) : (
+        <div className="flex flex-col gap-6">
+          {CATEGORIES.map((category) => {
+            const inCategory = visible.filter((s) => s.categoryId === category.id);
+            if (inCategory.length === 0) return null;
+            return (
+              <section key={category.id} aria-labelledby={`assess-${category.id}`}>
+                <h3 id={`assess-${category.id}`} className="mb-2 text-lg font-semibold">
+                  {category.name}
+                </h3>
+                <ul className="panel divide-y divide-line overflow-hidden">
+                  {inCategory.map((skill) => {
+                    const skillNote = plan.skillNotes[skill.id] ?? {};
+                    return (
+                      <SkillRow
+                        key={skill.id}
+                        skill={skill}
+                        saved={statusOf(skill)}
+                        draft={draft.skills[skill.id]}
+                        savedFeedback={skillNote.feedback ?? ''}
+                        savedTarget={skillNote.nextTarget ?? ''}
+                        parentName={parent.firstName}
+                        notesOpen={openNotes === skill.id}
+                        onToggleNotes={() => setOpenNotes((id) => (id === skill.id ? null : skill.id))}
+                        onChange={(patch) => updateSkill(skill.id, patch)}
+                        onUndo={() => undoSkill(skill.id)}
+                      />
+                    );
+                  })}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      <section aria-labelledby="session-summary" className="panel mt-6 p-4 sm:p-5">
+        <h3 id="session-summary" className="text-lg font-semibold">
+          For {parent.firstName}
+        </h3>
+        <div className="mt-3 grid gap-4 lg:grid-cols-2">
+          <div>
+            <label htmlFor="session-note" className="mb-1 block text-sm font-semibold">
+              Session note <span className="font-normal text-ink-2">(optional)</span>
+            </label>
+            <textarea
+              id="session-note"
+              rows={3}
+              className="field"
+              placeholder={`A sentence or two on how ${child.firstName} got on today.`}
+              value={note}
+              onChange={(e) => {
+                setResult(null);
+                update(child.id, (d) => ({ ...d, note: e.target.value }));
+              }}
+            />
+            <p className="mt-1 text-sm text-ink-3">Becomes the latest instructor update on the parent dashboard.</p>
+          </div>
+          <div>
+            <label htmlFor="session-priority" className="mb-1 block text-sm font-semibold">
+              Next coaching priority
+            </label>
+            <textarea
+              id="session-priority"
+              rows={3}
+              className="field"
+              value={priority}
+              onChange={(e) => {
+                setResult(null);
+                update(child.id, (d) => ({ ...d, priority: e.target.value }));
+              }}
+            />
+            <p className="mt-1 text-sm text-ink-3">One sentence. Shown on the parent dashboard.</p>
+          </div>
+        </div>
+      </section>
 
       {/* Save bar: stays in view while there is something to save. */}
-      <div className={cx('pointer-events-none z-20 mt-6', changes.length > 0 && 'sticky bottom-20 lg:bottom-5')}>
+      <div className={cx('pointer-events-none z-20 mt-6', unsaved > 0 && 'sticky bottom-20 lg:bottom-5')}>
         <div
           className={cx(
             'pointer-events-auto flex flex-wrap items-center justify-between gap-3 rounded-2xl p-3 pl-5 transition-colors',
-            changes.length > 0 ? 'bg-deep text-white shadow-overlay' : 'border border-line bg-surface text-ink-2',
+            unsaved > 0 ? 'bg-deep text-white shadow-overlay' : 'border border-line bg-surface text-ink-2',
           )}
         >
           <p className="tabular font-semibold" aria-live="polite" data-testid="unsaved-count">
-            {changes.length > 0 ? `${plural(changes.length, 'unsaved change')}` : 'No unsaved changes'}
+            {unsaved > 0 ? `${plural(unsaved, 'unsaved change')} for ${child.firstName}` : 'No unsaved changes'}
           </p>
           <div className="flex gap-2">
-            {changes.length > 0 && (
+            {unsaved > 0 && (
               <button
                 type="button"
-                onClick={() => setDraft({})}
+                onClick={() => clear(child.id)}
                 className="min-h-11 rounded-xl px-3 font-semibold text-white/85 hover:bg-white/10 hover:text-white"
               >
                 Discard
               </button>
             )}
-            <Button variant={changes.length > 0 ? 'onDeep' : 'secondary'} disabled={changes.length === 0} onClick={save}>
+            <Button variant={unsaved > 0 ? 'onDeep' : 'secondary'} disabled={unsaved === 0} onClick={save}>
               Save assessment
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-2">
+      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-2">
         {STATUS_ORDER.map((status) => (
-          <span key={status} className="inline-flex max-w-xs items-start gap-2">
-            <StatusBadge status={status} size="sm" />
-          </span>
+          <StatusBadge key={status} status={status} size="sm" />
         ))}
-        <span>Consistent and Mastered count as an achieved target. Marking a skill Mastered sends the parent an achievement.</span>
+        <span className="basis-full">
+          Consistent and Mastered count as an achieved target. Marking a skill Mastered sends the parent an achievement.
+        </span>
       </div>
     </div>
   );

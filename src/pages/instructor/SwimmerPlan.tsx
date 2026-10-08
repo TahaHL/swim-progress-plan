@@ -214,6 +214,7 @@ export default function SwimmerPlan() {
   }
 
   const { child, parent, plan, summary, nextSession, achievements } = swimmer;
+  const selectTab = (id: Tab) => setParams(id === 'assess' ? {} : { tab: id }, { replace: true });
   const categories = summariseByCategory(planSkills(plan), CATEGORY_IDS, data.assessments, child.id);
 
   return (
@@ -221,7 +222,7 @@ export default function SwimmerPlan() {
       <PageHeader back={{ to: '/instructor/swimmers', label: 'Swimmers' }} title={fullName(child)} subtitle={plan.programmeName} />
 
       <section aria-label="Development plan summary" className="panel p-5 sm:p-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex items-center gap-4">
             <Avatar firstName={child.firstName} lastName={child.lastName} tone={child.avatarTone} size="lg" />
             <dl className="text-[0.95rem] leading-snug">
@@ -262,7 +263,7 @@ export default function SwimmerPlan() {
             </div>
           </dl>
         </div>
-        <ul className="mt-6 grid gap-x-6 gap-y-3 border-t border-line pt-5 sm:grid-cols-2 lg:grid-cols-5">
+        <ul className="mt-6 grid gap-x-6 gap-y-3 border-t border-line pt-5 sm:grid-cols-3 xl:grid-cols-5">
           {categories.map((c) => (
             <li key={c.categoryId}>
               <p className="flex items-baseline justify-between gap-2 text-[0.95rem]">
@@ -292,7 +293,17 @@ export default function SwimmerPlan() {
             id={`tab-${t.id}`}
             aria-selected={tab === t.id}
             aria-controls={`panel-${t.id}`}
-            onClick={() => setParams(t.id === 'assess' ? {} : { tab: t.id }, { replace: true })}
+            tabIndex={tab === t.id ? 0 : -1}
+            onClick={() => selectTab(t.id)}
+            onKeyDown={(event) => {
+              const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+              if (step === 0) return;
+              event.preventDefault();
+              const index = TABS.findIndex((x) => x.id === t.id);
+              const target = TABS[(index + step + TABS.length) % TABS.length].id;
+              selectTab(target);
+              document.getElementById(`tab-${target}`)?.focus();
+            }}
             className={cx(
               '-mb-px min-h-11 border-b-2 px-3 font-display font-medium whitespace-nowrap transition-colors',
               tab === t.id ? 'border-deep text-ink' : 'border-transparent text-ink-2 hover:text-ink',
@@ -303,7 +314,7 @@ export default function SwimmerPlan() {
         ))}
       </div>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0} className="focus-visible:outline-none">
         {tab === 'assess' && <AssessmentPanel key={child.id} childId={child.id} />}
         {tab === 'history' && <HistoryTab swimmer={swimmer} />}
         {tab === 'notes' && <NotesTab key={child.id} swimmer={swimmer} />}

@@ -18,6 +18,7 @@ export default function ParentLayout() {
   return (
     <>
       <AppShell
+        variant="parent"
         nav={NAV}
         navLabel="Parent navigation"
         user={{ name: fullName(parent), detail: `Parent of ${child.firstName}` }}

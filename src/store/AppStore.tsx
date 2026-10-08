@@ -40,6 +40,17 @@ const timestamp = () => {
   return `${today()}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 };
 
+export interface SessionInput {
+  changes: SkillChange[];
+  note?: string;
+  priority?: string;
+}
+
+export interface SessionResult extends SaveAssessmentResult {
+  noteSent: boolean;
+  priorityChanged: boolean;
+}
+
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: AppData };
 
 interface AppActions {
@@ -47,6 +58,11 @@ interface AppActions {
   exitDemo(): void;
   /** Throws AssessmentError with a readable message if the change is not allowed. */
   saveAssessment(childId: string, changes: SkillChange[]): SaveAssessmentResult;
+  /**
+   * Saves everything entered on one swimmer's assessment sheet in a single step: skill changes,
+   * an optional note for the parent, and an optional new coaching priority.
+   */
+  saveSession(childId: string, input: SessionInput): SessionResult;
   addProgressUpdate(childId: string, text: string, nextObjectives: string[]): void;
   setNextPriority(childId: string, text: string): void;
   markNotificationsRead(ids?: string[]): void;
@@ -135,6 +151,18 @@ export function AppProvider({
         });
         commit(result.data);
         return result;
+      },
+      saveSession(childId, input) {
+        const stamp = { instructorId: DEMO_INSTRUCTOR_ID, date: today(), timestamp: timestamp() };
+        const result = saveAssessment(current(), { childId, changes: input.changes, ...stamp });
+        let next = result.data;
+        const note = input.note?.trim() ?? '';
+        if (note) next = addProgressUpdate(next, { childId, text: note, nextObjectives: [], ...stamp });
+        const priority = input.priority?.trim() ?? '';
+        const priorityChanged = priority !== '' && priority !== next.plans.find((p) => p.childId === childId)?.nextPriority;
+        if (priorityChanged) next = setNextPriority(next, childId, priority);
+        commit(next);
+        return { ...result, data: next, noteSent: note !== '', priorityChanged };
       },
       addProgressUpdate(childId, text, nextObjectives) {
         commit(

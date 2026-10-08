@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
-import { Award, CalendarDays, ChevronRight, Target } from 'lucide-react';
+import { ArrowRight, Award, CalendarDays, ChevronRight, Target, TrendingUp } from 'lucide-react';
 import { Medal } from '@/components/skills/AchievementCelebration';
 import { HowCalculated, ScopeNote } from '@/components/skills/HowCalculated';
 import { JourneyLane } from '@/components/skills/JourneyLane';
@@ -11,9 +11,10 @@ import { PROGRAMME_PHASES } from '@/config/demo';
 import { getCategory, getSkill } from '@/data/skills';
 import { daysBetween, formatMedium, today } from '@/lib/dates';
 import { formatName, plural } from '@/lib/format';
-import { currentStatus, type CategoryProgress } from '@/lib/progress';
+import { currentStatus, isAchieved, statusLevel, weekAssessments, type CategoryProgress } from '@/lib/progress';
 import { useParentScope } from '@/store/AppStore';
 import { fullName } from '@/store/selectors';
+import type { SkillStatus, SwimmingSkill } from '@/types';
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -37,6 +38,20 @@ export default function Home() {
   const shownPct = useCountUp(summary.achievedPct ?? 0);
   const nextPhase = PROGRAMME_PHASES.find((p) => p.week === plan.currentWeek + 1);
   const currentPhase = PROGRAMME_PHASES.find((p) => p.week === plan.currentWeek);
+  const improved = plan.currentWeek > 0 ? weekAssessments(assessments, child.id, plan.currentWeek, plan.skillIds).filter((w) => w.improved) : [];
+  // Skills the instructor has chosen to concentrate on; failing that, the least secure assessed skills.
+  const focusIds =
+    plan.focusSkillIds.length > 0
+      ? plan.focusSkillIds
+      : scope.skills
+          .map((skill) => ({ id: skill.id, status: currentStatus(assessments, child.id, skill.id) }))
+          .filter((x): x is { id: string; status: SkillStatus } => x.status !== null && !isAchieved(x.status))
+          .sort((a, b) => statusLevel(a.status) - statusLevel(b.status))
+          .slice(0, 3)
+          .map((x) => x.id);
+  const needsWork = focusIds
+    .map((id) => ({ skill: getSkill(id), status: currentStatus(assessments, child.id, id), feedback: plan.skillNotes[id]?.feedback }))
+    .filter((x): x is { skill: SwimmingSkill; status: SkillStatus | null; feedback: string | undefined } => Boolean(x.skill) && !isAchieved(x.status));
   const achievementIsRecent = latestAchievement ? daysBetween(latestAchievement.date, today()) <= 7 : false;
 
   return (
@@ -66,7 +81,7 @@ export default function Home() {
                 <Fact label="Development programme">{plan.programmeName}</Fact>
               </div>
               <Fact label="Programme week">
-                Week {plan.currentWeek} of {plan.totalWeeks}
+                {plan.currentWeek === 0 ? 'Not started yet' : `Week ${plan.currentWeek} of ${plan.totalWeeks}`}
                 <span aria-hidden="true" className="mt-2 flex max-w-36 gap-1">
                   {Array.from({ length: plan.totalWeeks }, (_, i) => (
                     <span key={i} className={cx('h-1.5 flex-1 rounded-full', i < plan.currentWeek ? 'bg-aqua' : 'bg-white/20')} />
@@ -115,15 +130,101 @@ export default function Home() {
                   : `${summary.achieved} of ${summary.assessed} assessed development targets achieved`}
               </p>
               {summary.assessed > 0 && (
-                <p className="tabular mt-1 text-white/70" data-testid="mastered-count">
-                  {plural(summary.mastered, 'skill')} mastered
-                  {summary.unassessed > 0 && `, ${summary.unassessed} not yet assessed`}
-                </p>
+                <>
+                  <p className="tabular mt-1 text-white/85" data-testid="mastered-count">
+                    {plural(summary.mastered, 'skill')} mastered
+                    {summary.unassessed > 0 && `, ${summary.unassessed} not yet assessed`}
+                  </p>
+                  <p className="mt-2 max-w-64 text-sm leading-snug text-white/75" data-testid="metric-explanation">
+                    A target is achieved when {child.firstName} is assessed as Consistent or Mastered in that skill.
+                    It is not a prediction of passing a stage.
+                  </p>
+                </>
               )}
               <div className="mt-2">
                 <HowCalculated summary={summary} childName={child.firstName} onDeep />
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The two questions a parent arrives with: what is getting better, and what is holding them back. */}
+      <section aria-labelledby="now-title" className="mt-8">
+        <h2 id="now-title" className="text-xl font-semibold">
+          What is improving, and what needs more work
+        </h2>
+        <div className="mt-3 grid gap-6 lg:grid-cols-2">
+          <div className="panel p-5 sm:p-6" data-testid="improving">
+            <h3 className="flex items-center gap-2 font-display font-semibold">
+              <TrendingUp className="size-5 text-aqua-dark" aria-hidden="true" />
+              Improved at the last session
+            </h3>
+            {plan.currentWeek === 0 ? (
+              <p className="mt-2 text-ink-2">Nothing has been assessed yet. The first assessment is recorded in week 1.</p>
+            ) : improved.length === 0 ? (
+              <p className="mt-2 text-ink-2">
+                No skills moved up a state in week {plan.currentWeek}. Progress within a state is described in the
+                instructor's note on each skill.
+              </p>
+            ) : (
+              <>
+                <p className="mt-0.5 text-[0.95rem] text-ink-2">
+                  {plural(improved.length, 'skill')} moved up in week {plan.currentWeek}
+                </p>
+                <ul className="mt-2 divide-y divide-line">
+                  {improved.slice(0, 5).map((item) => (
+                    <li key={item.skillId}>
+                      <Link
+                        to={`/parent/skills/${item.skillId}`}
+                        className="-mx-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-xl px-2 py-2.5 hover:bg-canvas"
+                      >
+                        <span className="font-medium">{getSkill(item.skillId)?.name}</span>
+                        <span className="flex items-center gap-1.5">
+                          <StatusBadge status={item.from} size="sm" />
+                          <ArrowRight className="size-4 text-ink-3" aria-hidden="true" />
+                          <span className="sr-only">to</span>
+                          <StatusBadge status={item.to} size="sm" />
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {improved.length > 5 && (
+                  <Link to="/parent/journey" className="mt-2 inline-flex min-h-9 items-center font-semibold text-ocean-dark underline decoration-1 underline-offset-4 hover:text-deep">
+                    and {improved.length - 5} more in the Progress Journey
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="panel p-5 sm:p-6" data-testid="needs-work">
+            <h3 className="flex items-center gap-2 font-display font-semibold">
+              <Target className="size-5 text-ocean" aria-hidden="true" />
+              Needs more work, and why
+            </h3>
+            {needsWork.length === 0 ? (
+              <p className="mt-2 text-ink-2">
+                {summary.assessed === 0
+                  ? `${instructor.firstName} will set the first priorities after the baseline assessment.`
+                  : `Every assessed target is achieved. ${instructor.firstName} will set new targets at the next session.`}
+              </p>
+            ) : (
+              <ul className="mt-2 divide-y divide-line">
+                {needsWork.map(({ skill, status, feedback }) => (
+                  <li key={skill.id}>
+                    <Link to={`/parent/skills/${skill.id}`} className="-mx-2 block rounded-xl px-2 py-2.5 hover:bg-canvas">
+                      <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                        <span className="font-medium">{skill.name}</span>
+                        <StatusBadge status={status} size="sm" />
+                      </span>
+                      {feedback && <span className="mt-1 line-clamp-3 block text-[0.95rem] leading-snug text-ink-2">{feedback}</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </section>
@@ -260,28 +361,6 @@ export default function Home() {
               </p>
             </div>
 
-            {plan.focusSkillIds.length > 0 && (
-              <>
-                <h3 className="mt-5 text-sm font-semibold text-ink-2">Skills we're concentrating on</h3>
-                <ul className="mt-1 divide-y divide-line">
-                  {plan.focusSkillIds.map((id) => {
-                    const skill = getSkill(id);
-                    if (!skill) return null;
-                    return (
-                      <li key={id}>
-                        <Link
-                          to={`/parent/skills/${id}`}
-                          className="group -mx-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-xl px-2 py-3 hover:bg-canvas"
-                        >
-                          <span className="font-medium">{skill.name}</span>
-                          <StatusBadge status={currentStatus(assessments, child.id, id)} size="sm" />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            )}
           </section>
 
           <section aria-labelledby="update-title" className="panel order-3 p-5 sm:p-6">

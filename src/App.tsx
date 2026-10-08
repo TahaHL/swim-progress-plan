@@ -1,26 +1,30 @@
-import { Component, useEffect, type ReactNode } from 'react';
+import { Component, lazy, useEffect, type ReactNode } from 'react';
 import { Link, Route, Routes } from 'react-router';
 import { Compass, TriangleAlert } from 'lucide-react';
 import { Button, EmptyState, PageSkeleton, buttonClass } from '@/components/ui/primitives';
 import { ToastProvider } from '@/components/ui/Toast';
 import { STORAGE_KEY } from '@/data/repository';
 import { AppProvider, useApp } from '@/store/AppStore';
+import { AssessmentDraftsProvider } from '@/store/AssessmentDrafts';
 import type { Role } from '@/types';
 import Login from '@/pages/Login';
 import ParentLayout from '@/pages/parent/ParentLayout';
 import ParentHome from '@/pages/parent/Home';
 import ParentSkills from '@/pages/parent/Skills';
 import ParentSkillDetail from '@/pages/parent/SkillDetail';
-import ParentJourney from '@/pages/parent/Journey';
 import ParentAchievements from '@/pages/parent/Achievements';
 import ParentProfile from '@/pages/parent/Profile';
 import InstructorLayout from '@/pages/instructor/InstructorLayout';
-import InstructorOverview from '@/pages/instructor/Overview';
-import InstructorSwimmers from '@/pages/instructor/Swimmers';
-import InstructorSwimmerPlan from '@/pages/instructor/SwimmerPlan';
-import InstructorAssessments from '@/pages/instructor/Assessments';
-import InstructorSessions from '@/pages/instructor/Sessions';
-import InstructorProfile from '@/pages/instructor/Profile';
+
+// Loaded on demand: the chart-heavy journey page and the instructor screens. The shell stays in
+// place and shows a skeleton while a page arrives.
+const ParentJourney = lazy(() => import('@/pages/parent/Journey'));
+const InstructorOverview = lazy(() => import('@/pages/instructor/Overview'));
+const InstructorSwimmers = lazy(() => import('@/pages/instructor/Swimmers'));
+const InstructorSwimmerPlan = lazy(() => import('@/pages/instructor/SwimmerPlan'));
+const InstructorAssessments = lazy(() => import('@/pages/instructor/Assessments'));
+const InstructorSessions = lazy(() => import('@/pages/instructor/Sessions'));
+const InstructorProfile = lazy(() => import('@/pages/instructor/Profile'));
 
 function FullPageMessage({ title, children, action }: { title: string; children: ReactNode; action: ReactNode }) {
   return (
@@ -106,6 +110,7 @@ export default function App() {
             </FullPageMessage>
           )}
         >
+          <AssessmentDraftsProvider>
           <Routes>
             <Route path="/" element={<Login />} />
             <Route
@@ -140,6 +145,7 @@ export default function App() {
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </AssessmentDraftsProvider>
         </AppProvider>
       </ToastProvider>
     </ErrorBoundary>

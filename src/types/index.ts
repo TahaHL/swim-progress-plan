@@ -61,7 +61,7 @@ export interface SkillCategory {
 
 export interface SkillVideo {
   id: string;
-  kind: 'correct' | 'mistakes';
+  kind: 'correct' | 'mistakes' | 'notice';
   title: string;
   caption: string;
   /** Planned running time, shown on the placeholder. */

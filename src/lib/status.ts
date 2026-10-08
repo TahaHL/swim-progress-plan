@@ -17,7 +17,7 @@ export const STATUS_META: Record<SkillStatus, StatusMeta> = {
   not_yet: {
     label: 'Not Yet Achieved',
     short: 'Not yet',
-    description: 'The skill has been introduced, but the success criteria are not being met yet.',
+    description: 'The skill is being introduced and practised. The success criteria are not met yet.',
     chip: 'bg-st-not-bg text-st-not-ink',
     swatch: 'bg-st-not',
     color: 'var(--color-st-not)',
@@ -25,7 +25,7 @@ export const STATUS_META: Record<SkillStatus, StatusMeta> = {
   developing: {
     label: 'Developing',
     short: 'Developing',
-    description: 'Some of the success criteria are met, or they are met with support or on some attempts.',
+    description: 'Some of the success criteria are met, or all are met only with support, a float or reminders.',
     chip: 'bg-st-dev-bg text-st-dev-ink',
     swatch: 'bg-st-dev',
     color: 'var(--color-st-dev)',
@@ -33,7 +33,7 @@ export const STATUS_META: Record<SkillStatus, StatusMeta> = {
   consistent: {
     label: 'Consistent',
     short: 'Consistent',
-    description: 'The success criteria are met on most attempts. The development target is achieved.',
+    description: 'All success criteria are met on most attempts, without support. The development target is achieved.',
     chip: 'bg-st-con-bg text-st-con-ink',
     swatch: 'bg-st-con',
     color: 'var(--color-st-con)',
@@ -41,7 +41,7 @@ export const STATUS_META: Record<SkillStatus, StatusMeta> = {
   mastered: {
     label: 'Mastered',
     short: 'Mastered',
-    description: 'All success criteria are met reliably and without prompting, including when tired.',
+    description: 'All success criteria are met every time, without reminders, and hold up over distance and when tired.',
     chip: 'bg-st-mas text-white',
     swatch: 'bg-st-mas',
     color: 'var(--color-st-mas)',

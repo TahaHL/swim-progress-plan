@@ -1,0 +1,7 @@
+# Lets Netlify build and host the demo straight from this repository (works with a private repo).
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

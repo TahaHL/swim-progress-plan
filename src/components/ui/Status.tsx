@@ -28,7 +28,7 @@ export function StatusIcon({
   const ring = inverse
     ? '#ffffff'
     : status === null || status === 'not_yet'
-      ? 'var(--color-st-not)'
+      ? 'var(--color-control)'
       : status === 'mastered'
         ? 'var(--color-st-mas)'
         : 'var(--color-st-con)';

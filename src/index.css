@@ -31,9 +31,11 @@
   --color-sunken: #e8eef0;
   --color-ink: #0e2531;
   --color-ink-2: #43565f;
-  --color-ink-3: #5c6f79;
+  --color-ink-3: #536670;
   --color-line: #dbe3e7;
   --color-line-strong: #b9c6cd;
+  /* Boundaries of form controls and empty gauges: at least 3:1 against every surface. */
+  --color-control: #7b8d96;
 
   /* Brand */
   --color-deep: #0a2a3f;
@@ -42,7 +44,7 @@
   --color-ocean: #126fae;
   --color-ocean-dark: #0d5788;
   --color-aqua: #2bb8b0;
-  --color-aqua-dark: #0e7d77;
+  --color-aqua-dark: #0b6f69;
   --color-aqua-soft: #dcf3f0;
   --color-foam: #e6f1f8;
 
@@ -120,7 +122,7 @@
   .field {
     width: 100%;
     border-radius: 0.75rem;
-    border: 1px solid var(--color-line-strong);
+    border: 1px solid var(--color-control);
     background: var(--color-surface);
     padding: 0.625rem 0.75rem;
     color: var(--color-ink);
