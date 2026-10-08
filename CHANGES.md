@@ -7,14 +7,14 @@ programme's five labels: Not Assessed, Needs Practice, Fair, Good, Pass.
 
 | Area | Change | Files |
 | --- | --- | --- |
-| Model | Four assessed levels plus Not Assessed, which is the absence of a record and is never counted as an attempt. | `src/types/index.ts`, `src/lib/status.ts` |
+| Model | Four assessed levels plus Not Assessed, which means no current assessment and is never counted as an attempt. The instructor can choose any of the five; choosing Not Assessed for an assessed skill keeps its history and takes it out of the assessed count. | `src/types/index.ts`, `src/lib/status.ts` |
 | Calculation | One figure: "Skills marked Pass: X of Y assessed skills". The old "targets achieved" figure (which counted the top two levels) is removed. Good is never counted as Pass. No score or average is derived from the labels. | `src/lib/progress.ts` |
 | Achievements | Triggered by Pass. Every achievement states it is a Pass for one skill and not a stage award. | `src/lib/assessmentService.ts`, `src/data/skills.ts` |
 | Provisional wording | Level descriptions are flagged as awaiting teacher confirmation wherever they are shown. | `src/lib/status.ts`, `src/components/ui/Status.tsx` |
 | Parent screens | Dashboard ring, level breakdown, Not Assessed count, skill page five-step scale, journey figures and chart (Not Assessed drawn as a separate outlined segment), filters, achievements. | `src/pages/parent/*`, `src/components/charts/*`, `src/components/skills/HowCalculated.tsx` |
 | Instructor screens | Assessment controls, save summary, filters, overview, swimmer plan, swimmer list. | `src/pages/instructor/*`, `src/components/skills/AssessmentPanel.tsx` |
 | Demo data | Same fictional history, relabelled one for one. Data saved in a browser by the old version is discarded and reseeded (`SCHEMA_VERSION` 2). | `src/data/seed.ts` |
-| Tests | Unit tests 17 to 23; browser test 33 to 35 checks. | `src/lib/progress.test.ts`, `e2e/journey.mjs` |
+| Tests | Unit tests 17 to 26; browser test 33 to 36 checks. | `src/lib/progress.test.ts`, `e2e/journey.mjs` |
 | Documents | README, skills review and teacher sign-off checklist updated. | `README.md`, `SWIMMING_SKILLS_REVIEW.md`, `docs/TEACHER_SIGNOFF_CHECKLIST.md` |
 
 **Effect on the demo figures.** Nothing in the fictional history changed, but the headline did:

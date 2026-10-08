@@ -29,7 +29,7 @@ describe('the five assessment labels', () => {
     ]);
   });
 
-  it('treats Not Assessed as the absence of a record, not as a level', () => {
+  it('treats Not Assessed as having no current level, not as a level', () => {
     expect(STATUS_ORDER as readonly string[]).not.toContain('not_assessed');
     expect(currentStatus([], 'x', 'a')).toBeNull();
     expect(statusLabel(currentStatus([], 'x', 'a'))).toBe(NOT_ASSESSED.label);
@@ -186,6 +186,38 @@ describe('saving an assessment', () => {
     expect(result.statusChanges[0].from).toBeNull();
     expect(result.before).toMatchObject({ assessed: 16, notAssessed: 1 });
     expect(result.after).toMatchObject({ assessed: 17, notAssessed: 0, passed: 3, passPct: 18 });
+  });
+
+  it('setting a skill back to Not Assessed keeps its history and removes it from the denominator', () => {
+    const data = buildSeed(TODAY);
+    const result = save(data, [{ skillId: 'arm-alternating', status: null }]);
+    expect(result.statusChanges).toEqual([{ skillId: 'arm-alternating', from: 'good', to: null }]);
+    expect(result.before).toMatchObject({ assessed: 16, notAssessed: 1, passed: 3, passPct: 19 });
+    expect(result.after).toMatchObject({ assessed: 15, notAssessed: 2, passed: 3, passPct: 20 });
+    expect(result.after.counts.good).toBe(4);
+    expect(currentStatus(result.data.assessments, OLIVER, 'arm-alternating')).toBeNull();
+    // The earlier assessments are still there, followed by the Not Assessed record.
+    const history = result.data.assessments.filter((a) => a.childId === OLIVER && a.skillId === 'arm-alternating');
+    expect(history.map((a) => a.status)).toEqual(['good', 'good', null]);
+    expect(selectParentScope(result.data, 'parent-sarah')!.notifications[0].body).toBe('Alternating arm action is now Not Assessed.');
+    // It can be assessed again afterwards.
+    const again = save(result.data, [{ skillId: 'arm-alternating', status: 'fair' }]);
+    expect(again.after).toMatchObject({ assessed: 16, notAssessed: 1 });
+  });
+
+  it('setting a Not Assessed skill to Not Assessed changes nothing', () => {
+    const data = buildSeed(TODAY);
+    const result = save(data, [{ skillId: 'co-distance', status: null }]);
+    expect(result.statusChanges).toHaveLength(0);
+    expect(result.data.assessments).toHaveLength(data.assessments.length);
+    expect(result.data.notifications).toHaveLength(data.notifications.length);
+  });
+
+  it('setting a Pass back to Not Assessed withdraws its achievement', () => {
+    const result = save(buildSeed(TODAY), [{ skillId: 'bp-streamline', status: null }]);
+    expect(result.removedAchievements).toBe(1);
+    expect(result.after).toMatchObject({ assessed: 15, passed: 2 });
+    expect(result.data.achievements.some((a) => a.childId === OLIVER && a.skillId === 'bp-streamline')).toBe(false);
   });
 
   it('saves feedback without a level change and tells the parent', () => {

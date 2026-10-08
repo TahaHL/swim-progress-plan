@@ -118,8 +118,11 @@ The labels and their order are fixed. **The descriptions are provisional**, and 
 difference between Good and Pass has not been defined. The app says so wherever the descriptions
 appear (`DEFINITIONS_CONFIRMED` in `src/lib/status.ts`).
 
-Not Assessed is not a level a swimmer is given. It means no assessment record exists, so it is
-stored as "no value", is never counted as an attempt, and cannot be selected by the instructor.
+Not Assessed is not a level a swimmer is given. It means the skill has no current assessment, so
+it is stored as "no value" and is never counted as an attempt. The instructor's sheet shows all
+five labels: a skill with no record shows Not Assessed selected, and choosing Not Assessed for an
+assessed skill sets it back. The earlier assessments stay in the history, the skill leaves the
+assessed count, and an achievement for a Pass on that skill is withdrawn.
 
 ## How progress is calculated
 
@@ -136,7 +139,7 @@ All rules live in `src/lib/progress.ts` and are covered by `src/lib/progress.tes
 - A skill's current level is its most recent assessment.
 - A Pass is for one skill within this programme. Passing skills here does not mean a swimming
   stage has been passed, and the app says so next to every figure and in every achievement.
-- A skill moved back down from Pass (a correction) has its achievement withdrawn.
+- A skill moved back down from Pass, or set back to Not Assessed, has its achievement withdrawn.
 - Saving Pass for a skill that is already Pass changes nothing, so achievements cannot duplicate.
 
 ## Project structure

@@ -5,7 +5,7 @@
  */
 import { getSkill } from '@/data/skills';
 import { summariseProgress, currentStatus, type ProgressSummary } from '@/lib/progress';
-import { STATUS_META } from '@/lib/status';
+import { statusLabel } from '@/lib/status';
 import type {
   Achievement,
   AppData,
@@ -70,8 +70,8 @@ export function achievementNotification(
 
 export interface SkillChange {
   skillId: string;
-  /** New status. Omit to leave the status as it is. */
-  status?: SkillStatus;
+  /** New level, or null to set the skill back to Not Assessed. Omit to leave it as it is. */
+  status?: SkillStatus | null;
   /** New parent-facing feedback. Omit to leave unchanged. */
   feedback?: string;
   /** New development target. Omit to leave unchanged. */
@@ -88,7 +88,7 @@ export interface SaveAssessmentInput {
 
 export interface SaveAssessmentResult {
   data: AppData;
-  statusChanges: { skillId: string; from: SkillStatus | null; to: SkillStatus }[];
+  statusChanges: { skillId: string; from: SkillStatus | null; to: SkillStatus | null }[];
   notesUpdated: number;
   newAchievements: Achievement[];
   removedAchievements: number;
@@ -104,7 +104,7 @@ export interface SaveAssessmentResult {
  * 2. Progress figures are derived from the history, so they update automatically.
  * 3. A skill that newly reaches Pass creates an achievement and a parent notification. Saving
  *    Pass again for a skill already at Pass changes nothing, so there are no duplicates.
- * 4. A skill moved back down from Pass (a correction) withdraws its achievement, so the
+ * 4. A skill moved back down from Pass, or set back to Not Assessed, withdraws its achievement, so the
  *    parent is never left with an achievement that no longer matches the assessment.
  * 5. Any other change produces one summary notification for the parent.
  */
@@ -151,7 +151,7 @@ export function saveAssessment(
       notedSkills.push(skill);
     }
 
-    if (change.status && change.status !== from) {
+    if (change.status !== undefined && change.status !== from) {
       assessments.push({
         id: makeId('as'),
         childId: child.id,
@@ -191,7 +191,7 @@ export function saveAssessment(
   if (otherChanges.length > 0 || notesOnly.length > 0) {
     const touched = [...otherChanges.map((c) => c.skillId), ...notesOnly.map((s) => s.id)];
     const lines = [
-      ...otherChanges.map((c) => `${getSkill(c.skillId)!.name} is now ${STATUS_META[c.to].label}`),
+      ...otherChanges.map((c) => `${getSkill(c.skillId)!.name} is now ${statusLabel(c.to)}`),
       ...notesOnly.map((s) => `New feedback on ${s.name}`),
     ];
     const shown = lines.slice(0, 2).join('. ');

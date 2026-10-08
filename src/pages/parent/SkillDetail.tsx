@@ -63,13 +63,17 @@ export default function SkillDetail() {
                   {statusLabel(status)}
                 </p>
                 <p className="text-white/75">
-                  {latest ? `Assessed ${formatMedium(latest.date)}, week ${latest.week}` : 'No assessment recorded yet'}
+                  {!latest
+                    ? 'No assessment recorded yet'
+                    : latest.status === null
+                      ? `Set back to Not Assessed ${formatMedium(latest.date)}, week ${latest.week}`
+                      : `Assessed ${formatMedium(latest.date)}, week ${latest.week}`}
                 </p>
               </div>
             </div>
             <p className="mt-4 leading-snug text-white/85">
               {statusDescription(status)}
-              {status === null && ` ${instructor.firstName} will assess it later in the programme.`}
+              {status === null && ` ${instructor.firstName} will assess it ${latest ? 'again ' : ''}later in the programme.`}
             </p>
             <ol aria-label="The five assessment labels, in order" className="mt-5 grid grid-cols-5 gap-1">
               {FIVE_LEVELS.map((s) => (

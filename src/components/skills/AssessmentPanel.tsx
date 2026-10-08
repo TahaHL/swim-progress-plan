@@ -11,15 +11,19 @@ import type { SkillChange } from '@/lib/assessmentService';
 import { formatLong, formatMedium } from '@/lib/dates';
 import { plural } from '@/lib/format';
 import { STATUS_ORDER, currentStatus, isPass } from '@/lib/progress';
-import { STATUS_META } from '@/lib/status';
+import { STATUS_META, statusLabel } from '@/lib/status';
 import { useApp, type SessionResult } from '@/store/AppStore';
 import { EMPTY_DRAFT, useAssessmentDrafts, type SkillDraft } from '@/store/AssessmentDrafts';
 import { fullName, planSkills, selectSwimmer } from '@/store/selectors';
 import type { SkillStatus, SwimmingSkill } from '@/types';
 
+/** The five labels in order, as choices. null is Not Assessed. */
+const CHOICES: (SkillStatus | null)[] = [null, ...STATUS_ORDER];
+
 /**
- * The four assessed levels for one skill. Behaves as a radio group: arrow keys move and select.
- * With nothing selected the skill is Not Assessed, which is a missing record, not a level to pick.
+ * The five labels for one skill. Behaves as a radio group: arrow keys move and select.
+ * Not Assessed is first. Choosing it for a skill that has a level sets the skill back to Not
+ * Assessed: the earlier assessments stay in its history, and it stops counting as assessed.
  */
 function StatusRadio({
   value,
@@ -27,41 +31,44 @@ function StatusRadio({
   label,
 }: {
   value: SkillStatus | null;
-  onChange: (status: SkillStatus) => void;
+  onChange: (status: SkillStatus | null) => void;
   label: string;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
-  const selectedIndex = value ? STATUS_ORDER.indexOf(value) : -1;
+  const selectedIndex = CHOICES.indexOf(value);
 
   const onKeyDown = (event: KeyboardEvent, index: number) => {
     const step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
     if (step === 0) return;
     event.preventDefault();
-    const next = (index + step + STATUS_ORDER.length) % STATUS_ORDER.length;
-    onChange(STATUS_ORDER[next]);
+    const next = (index + step + CHOICES.length) % CHOICES.length;
+    onChange(CHOICES[next]);
     refs.current[next]?.focus();
   };
 
   return (
-    <div role="radiogroup" aria-label={label} className="grid grid-cols-4 gap-1.5">
-      {STATUS_ORDER.map((status, index) => {
+    <div role="radiogroup" aria-label={label} className="grid grid-cols-5 gap-1 sm:gap-1.5">
+      {CHOICES.map((status, index) => {
         const selected = index === selectedIndex;
         return (
           <button
-            key={status}
+            key={status ?? 'not-assessed'}
             ref={(el) => {
               refs.current[index] = el;
             }}
             type="button"
             role="radio"
             aria-checked={selected}
-            tabIndex={selected || (selectedIndex === -1 && index === 0) ? 0 : -1}
+            tabIndex={selected ? 0 : -1}
             onClick={() => onChange(status)}
             onKeyDown={(e) => onKeyDown(e, index)}
             className={cx(
-              'flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl border px-1 text-center text-[0.78rem] leading-[1.1] font-semibold transition-colors sm:min-h-11 sm:flex-row sm:gap-1.5 sm:px-2 sm:text-left sm:text-[0.8125rem]',
+              'flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-0.5 text-center text-[0.72rem] leading-[1.1] font-semibold transition-colors sm:min-h-12 sm:px-1 sm:text-[0.8125rem]',
               selected
-                ? cx(STATUS_META[status].chip, 'border-transparent ring-2 ring-deep ring-inset')
+                ? cx(
+                    status === null ? 'border-dashed border-ink-2 bg-sunken text-ink' : cx(STATUS_META[status].chip, 'border-transparent'),
+                    'ring-2 ring-deep ring-inset',
+                  )
                 : 'border-control bg-surface text-ink-2 hover:border-ink-2 hover:text-ink',
             )}
           >
@@ -71,7 +78,7 @@ function StatusRadio({
               inverse={selected && status === 'pass'}
               className={selected ? undefined : 'opacity-60'}
             />
-            {STATUS_META[status].label}
+            {statusLabel(status)}
           </button>
         );
       })}
@@ -102,7 +109,7 @@ function SkillRow({
   onChange: (patch: SkillDraft) => void;
   onUndo: () => void;
 }) {
-  const value = draft?.status ?? saved;
+  const value = draft?.status !== undefined ? draft.status : saved;
   const statusChanged = draft?.status !== undefined && draft.status !== saved;
   const notesChanged =
     (draft?.feedback !== undefined && draft.feedback.trim() !== savedFeedback) ||
@@ -111,7 +118,7 @@ function SkillRow({
 
   return (
     <li data-testid={`assess-${skill.id}`} className={cx('px-4 py-4 transition-colors sm:px-5', changed && 'bg-foam')}>
-      <div className="grid gap-x-5 gap-y-3 xl:grid-cols-[minmax(0,1fr)_27rem] xl:items-center">
+      <div className="grid gap-x-5 gap-y-3 xl:grid-cols-[minmax(0,1fr)_31rem] xl:items-center">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="font-display font-medium">{skill.name}</p>
@@ -241,10 +248,10 @@ export function AssessmentPanel({
       const saved = currentStatus(data.assessments, childId, skill.id);
       const note = swimmer.plan.skillNotes[skill.id] ?? {};
       const change: SkillChange = { skillId: skill.id };
-      if (d.status && d.status !== saved) change.status = d.status;
+      if (d.status !== undefined && d.status !== saved) change.status = d.status;
       if (d.feedback !== undefined && d.feedback.trim() !== (note.feedback ?? '')) change.feedback = d.feedback;
       if (d.nextTarget !== undefined && d.nextTarget.trim() !== (note.nextTarget ?? '')) change.nextTarget = d.nextTarget;
-      if (change.status || change.feedback !== undefined || change.nextTarget !== undefined) list.push(change);
+      if (change.status !== undefined || change.feedback !== undefined || change.nextTarget !== undefined) list.push(change);
     }
     return list;
   }, [draft.skills, skills, swimmer, data.assessments, childId]);
@@ -519,13 +526,14 @@ export function AssessmentPanel({
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-ink-2">
-        {STATUS_ORDER.map((status) => (
-          <StatusBadge key={status} status={status} size="sm" />
+        {CHOICES.map((status) => (
+          <StatusBadge key={status ?? 'not-assessed'} status={status} size="sm" />
         ))}
         <span className="basis-full">
-          A skill with no level selected is Not Assessed and is not counted. Only Pass is counted in the parent's
-          "skills marked Pass" figure; Good is not counted as Pass. Marking a skill Pass sends the parent an
-          achievement for that skill.
+          Not Assessed means no current assessment, and those skills are not counted. Setting a skill back to Not
+          Assessed keeps its earlier assessments in the history. Only Pass is counted in the parent's "skills
+          marked Pass" figure; Good is not counted as Pass. Marking a skill Pass sends the parent an achievement
+          for that skill.
         </span>
         <ProvisionalNote className="basis-full" />
       </div>

@@ -206,7 +206,8 @@ await step("7. Find Oliver with search and open his assessment", async () => {
 await step('8. Change the skill status', async () => {
   const group = page.getByRole('radiogroup', { name: 'Assessment for Side breathing' });
   expect(await group.getByRole('radio', { name: 'Fair' }).isChecked(), 'Fair should be selected first');
-  expect((await group.getByRole('radio').count()) === 4, 'Four assessed levels expected; Not Assessed is not a choice');
+  const choices = await group.getByRole('radio').allInnerTexts();
+  expect(choices.map((c) => c.replace(/\s+/g, ' ').trim()).join('|') === 'Not Assessed|Needs Practice|Fair|Good|Pass', `Five labels expected in order, got ${choices}`);
   await group.getByRole('radio', { name: 'Good' }).click();
   await expectText(page.getByTestId('unsaved-count'), '1 unsaved change');
   await expectText(page.getByTestId('assess-br-side'), 'Was Fair');
@@ -496,6 +497,37 @@ await step('Tablet widths: no sideways scrolling on the main screens', async () 
   }
   await page.screenshot({ path: `${SHOTS}10-tablet-assessments.png`, fullPage: true });
   await page.setViewportSize({ width: 1366, height: 900 });
+});
+
+await step('Not Assessed can be chosen: history is kept and the skill stops counting as assessed', async () => {
+  await page.goto(`${BASE}#/instructor/assessments?swimmer=child-oliver`);
+  await heading('Assessments').waitFor();
+  // A skill with no record already shows Not Assessed as selected.
+  const untouched = page.getByRole('radiogroup', { name: 'Assessment for Maintaining technique over distance' });
+  expect(await untouched.getByRole('radio', { name: 'Not Assessed' }).isChecked(), 'Unassessed skill should show Not Assessed selected');
+  // Set an assessed skill back to Not Assessed.
+  const arms = page.getByRole('radiogroup', { name: 'Assessment for Alternating arm action' });
+  expect(await arms.getByRole('radio', { name: 'Good' }).isChecked(), 'Alternating arm action should start at Good');
+  await arms.getByRole('radio', { name: 'Not Assessed' }).click();
+  await expectText(page.getByTestId('assess-arm-alternating'), 'Was Good');
+  await page.getByRole('button', { name: 'Save assessment' }).click();
+  await expectText(page.getByTestId('save-result'), 'Skills marked Pass: 3 of 16 to 3 of 15 assessed');
+  await page.getByTestId('save-result').getByRole('button', { name: 'View as parent' }).click();
+  await heading('Welcome back, Sarah!').waitFor();
+  await expectText(page.getByTestId('pass-count'), '3 of 15 assessed skills');
+  await expectText(page.getByTestId('not-assessed-count'), '2 Not Assessed, not counted');
+  await page.goto(`${BASE}#/parent/skills/arm-alternating`);
+  await expectText(page.getByTestId('skill-status'), (t) => t === 'Not Assessed', 'Skill set back to Not Assessed');
+  await expectText(page.locator('main'), 'Set back to Not Assessed');
+  const history = page.locator('section[aria-labelledby="history-title"]');
+  await expectText(history, 'Good');
+  expect((await history.locator('li').count()) === 3, 'Earlier assessments should stay in the history');
+  // Put the demo data back for the steps that follow.
+  await page.goto(`${BASE}#/parent/profile`);
+  await page.getByRole('button', { name: 'Reset demo data' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Reset demo data' }).click();
+  await page.goto(`${BASE}#/parent`);
+  await expectText(pct, (t) => t === '19%', 'Skills marked Pass after reset');
 });
 
 await step('Keyboard: skip link, visible focus, and Enter activates the demo entry', async () => {

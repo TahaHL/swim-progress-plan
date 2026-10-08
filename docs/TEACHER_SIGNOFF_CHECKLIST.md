@@ -27,6 +27,7 @@ provisional and are marked as such on screen.
 | A9 | Is "Needs Practice" the first assessment a new skill normally receives, or is it reserved for a skill that was tried and not managed? | Used in the demo as the usual starting level. | | |
 | A10 | Are 17 targets realistic for one six-week block, or should a plan pick a subset per child? | All 17 are in every plan; the instructor picks focus skills. | | |
 | A11 | Are the provisional descriptions acceptable as parent-facing wording? | Shown with a "provisional" notice. | | |
+| A12 | When should an instructor set an assessed skill back to **Not Assessed**, and should the parent be told? | Allowed at any time. History is kept, the skill stops counting as assessed, and the parent gets a notification. | | |
 
 ## B. Arbitrary distances
 

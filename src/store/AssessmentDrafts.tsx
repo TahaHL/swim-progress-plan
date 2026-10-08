@@ -8,7 +8,8 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import type { SkillStatus } from '@/types';
 
 export interface SkillDraft {
-  status?: SkillStatus;
+  /** A level, or null for Not Assessed. undefined = not changed. */
+  status?: SkillStatus | null;
   feedback?: string;
   nextTarget?: string;
 }

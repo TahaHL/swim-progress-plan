@@ -98,7 +98,11 @@ export interface SkillAssessment {
   id: string;
   childId: string;
   skillId: string;
-  status: SkillStatus;
+  /**
+   * The level recorded. null records that the instructor set the skill back to Not Assessed:
+   * the earlier assessments stay in the history, but the skill no longer has a current level.
+   */
+  status: SkillStatus | null;
   /** Programme week the assessment belongs to (1-based). */
   week: number;
   date: ISODate;

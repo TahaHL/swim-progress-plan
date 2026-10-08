@@ -9,7 +9,9 @@
  * 2. There are five labels. Four are assessed levels, in order: Needs Practice, Fair, Good, Pass.
  *    The fifth, Not Assessed, means no assessment has been recorded. It is not a failed attempt,
  *    it is not an attempted skill, and it never appears in a denominator.
- * 3. A skill's current level is its most recent assessment.
+ * 3. A skill's current level is its most recent assessment. An instructor can set a skill back
+ *    to Not Assessed; that is stored as a record with no level, so the history is kept but the
+ *    skill drops out of the assessed count again.
  * 4. The one figure the app reports is a count:
  *       Skills marked Pass: X of Y assessed skills   (and X / Y as a percentage)
  *    Not Assessed skills are left out of Y and their count is shown separately. With nothing
@@ -143,9 +145,10 @@ export function summariseByCategory(
 
 export interface WeekAssessment {
   skillId: string;
-  /** Status before this week. null = this was the first assessment. */
+  /** Level before this week. null = Not Assessed before this week. */
   from: SkillStatus | null;
-  to: SkillStatus;
+  /** Level after this week. null = set back to Not Assessed. */
+  to: SkillStatus | null;
   changed: boolean;
   improved: boolean;
   assessment: SkillAssessment;
@@ -171,7 +174,7 @@ export function weekAssessments(
       from,
       to: last.status,
       changed: from !== last.status,
-      improved: from !== null && statusLevel(last.status) > statusLevel(from),
+      improved: from !== null && last.status !== null && statusLevel(last.status) > statusLevel(from),
       assessment: last,
     });
   }

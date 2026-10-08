@@ -55,7 +55,10 @@ export const STATUS_META: Record<SkillStatus, StatusMeta> = {
   },
 };
 
-/** Level 1 of 5. Not a grade: it means no assessment has been recorded for the skill. */
+/**
+ * Level 1 of 5. Not a grade: the skill has no current assessment, either because none has been
+ * recorded yet or because the instructor set it back to Not Assessed.
+ */
 export const NOT_ASSESSED = {
   label: 'Not Assessed',
   description: 'This skill has not yet been evaluated.',
