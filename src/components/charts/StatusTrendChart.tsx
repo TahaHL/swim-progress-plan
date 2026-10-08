@@ -1,4 +1,3 @@
-import { useReducedMotion } from 'motion/react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { STATUS_ORDER, type ProgressSummary } from '@/lib/progress';
 import { STATUS_META } from '@/lib/status';
@@ -44,7 +43,6 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: { paylo
  * One axis, one unit (skills). Text colours come from ink tokens; the bars carry the state colours.
  */
 export function StatusTrendChart({ trend }: { trend: { week: number; summary: ProgressSummary }[] }) {
-  const reduced = useReducedMotion();
   const rows: Row[] = trend.map(({ week, summary }) => ({
     label: `Week ${week}`,
     ...summary.counts,
@@ -56,7 +54,7 @@ export function StatusTrendChart({ trend }: { trend: { week: number; summary: Pr
   return (
     <div className="h-60 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -18 }} barCategoryGap="30%">
+        <BarChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -18 }} barCategoryGap="22%">
           <CartesianGrid vertical={false} stroke="var(--color-line)" />
           <XAxis
             dataKey="label"
@@ -85,7 +83,7 @@ export function StatusTrendChart({ trend }: { trend: { week: number; summary: Pr
               stroke="var(--color-surface)"
               strokeWidth={2}
               maxBarSize={84}
-              isAnimationActive={!reduced}
+              isAnimationActive={false}
             />
           ))}
         </BarChart>

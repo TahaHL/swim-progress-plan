@@ -327,7 +327,7 @@ export default function Journey() {
               {newlyAssessed.length > 0 && `. ${plural(newlyAssessed.length, 'skill was', 'skills were')} assessed for the first time`}.
             </p>
 
-            <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className="mt-6 grid gap-8 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
               <figure className="min-w-0">
                 <figcaption className="mb-2 font-display font-semibold">Skills in each state, by week</figcaption>
                 <StatusTrendChart trend={trend} />

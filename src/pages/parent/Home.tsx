@@ -49,7 +49,7 @@ export default function Home() {
       {/* Child profile and overall skill development */}
       <section aria-labelledby="child-name" className="deep-panel p-5 sm:p-8">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
-          <div className="min-w-0 lg:max-w-md">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-4">
               <Avatar firstName={child.firstName} lastName={child.lastName} size="lg" onDeep />
               <div className="min-w-0">
@@ -61,8 +61,10 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <dl className="mt-7 grid gap-x-8 gap-y-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-[1.4fr_1fr_1.1fr]">
-              <Fact label="Development programme">{plan.programmeName}</Fact>
+            <dl className="mt-7 grid grid-cols-2 gap-x-8 gap-y-5">
+              <div className="col-span-2">
+                <Fact label="Development programme">{plan.programmeName}</Fact>
+              </div>
               <Fact label="Programme week">
                 Week {plan.currentWeek} of {plan.totalWeeks}
                 <span aria-hidden="true" className="mt-2 flex max-w-36 gap-1">

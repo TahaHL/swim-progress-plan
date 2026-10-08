@@ -140,11 +140,11 @@ export function AppShell({
 
   // On navigation: back to the top, and move focus to the new page for keyboard and screen reader users.
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    window.scrollTo(0, 0);
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 

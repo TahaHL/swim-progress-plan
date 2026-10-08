@@ -26,7 +26,7 @@ export function buildComparison(
 }
 
 export function describeChange(row: ComparisonRow): string {
-  if (row.to === null) return 'Not yet assessed';
+  if (row.to === null) return 'Not assessed';
   if (row.from === null) return 'First assessed';
   const steps = statusLevel(row.to) - statusLevel(row.from);
   if (steps === 0) return 'No change';
@@ -84,7 +84,7 @@ export function BaselineComparison({
 }) {
   return (
     <div>
-      <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_6.5rem] items-end gap-4 border-b border-line pb-2 text-sm text-ink-2 sm:grid">
+      <div className="hidden grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_5.75rem] items-end gap-4 border-b border-line pb-2 text-[0.8rem] text-ink-2 sm:grid">
         <span>Skill</span>
         <span className="grid grid-cols-4 text-center">
           {STATUS_ORDER.map((s) => (
@@ -106,7 +106,7 @@ export function BaselineComparison({
                 return (
                   <li
                     key={row.skill.id}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_6.5rem]"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_5.75rem]"
                   >
                     <Link
                       to={skillLink(row.skill.id)}

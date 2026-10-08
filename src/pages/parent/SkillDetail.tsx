@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router';
-import { Check, LifeBuoy, MessageSquareText, SearchX, Target } from 'lucide-react';
+import { LifeBuoy, MessageSquareText, SearchX, Target } from 'lucide-react';
 import { VideoCard } from '@/components/skills/VideoCard';
 import { StatusBadge, StatusIcon } from '@/components/ui/Status';
 import { Avatar, EmptyState, PageHeader, buttonClass, cx } from '@/components/ui/primitives';
@@ -150,9 +150,7 @@ export default function SkillDetail() {
             <ul className="panel mt-3 divide-y divide-line">
               {skill.successCriteria.map((criterion) => (
                 <li key={criterion} className="flex gap-3 px-4 py-3.5 leading-snug sm:px-5">
-                  <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 border-line-strong text-ink-3">
-                    <Check className="size-3" strokeWidth={3.5} aria-hidden="true" />
-                  </span>
+                  <span aria-hidden="true" className="mt-[0.5rem] size-2 shrink-0 rounded-full bg-aqua" />
                   {criterion}
                 </li>
               ))}
