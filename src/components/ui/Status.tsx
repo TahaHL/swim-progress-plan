@@ -144,17 +144,17 @@ export function StatusLegend({ compact = false }: { compact?: boolean }) {
     );
   }
   return (
-    <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+    <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
       {STATUS_ORDER.map((status) => (
-        <div key={status} className="flex gap-3">
+        <li key={status} className="flex gap-3">
           <StatusIcon status={status} size={22} className="mt-0.5" />
-          <div>
-            <dt className="font-semibold">{STATUS_META[status].label}</dt>
-            <dd className="text-[0.95rem] leading-snug text-ink-2">{STATUS_META[status].description}</dd>
-          </div>
-        </div>
+          <p>
+            <strong className="block font-semibold">{STATUS_META[status].label}</strong>
+            <span className="block text-[0.95rem] leading-snug text-ink-2">{STATUS_META[status].description}</span>
+          </p>
+        </li>
       ))}
-    </dl>
+    </ul>
   );
 }
 

@@ -1,12 +1,16 @@
 # Swim Progress Plan
 
-Working prototype of a supplementary swimming development platform. Parents see exactly how their
-child is progressing through individual swimming skills; instructors record assessments in a few
-taps; the parent's view updates from those assessments.
+A demonstration of an idea: supplementary swimming coaching in which every child works on
+individual improvement targets and parents can see what improved, what needs more work, and what
+comes next. Instructors record assessments in a few taps and the parent's view updates from them.
 
-> **Demonstration only.** Every person in the app is fictional. Sign-in is simulated and nothing
-> here is secure. Do not enter real children's information. The prototype is not production-ready
-> and makes no claim of UK GDPR or safeguarding compliance.
+**Live demo:** https://tahahl.github.io/swim-progress-plan/
+
+> **This is a concept demonstration, not a service.** Every person in the app is fictional. Sign-in
+> is simulated and nothing here is secure. Do not enter real children's information. Nothing can be
+> booked or paid for, and no venue, timetable, price or partner has been agreed. The assessment
+> content is draft and has not been signed off as a teaching standard. The prototype is not
+> production-ready and makes no claim of UK GDPR or safeguarding compliance.
 
 ## Run it
 
@@ -43,6 +47,9 @@ The published page is public to anyone with the link, whatever the repository's 
 free GitHub plan, Pages also requires the repository itself to be public.
 
 ## Five-minute demo script
+
+The start screen lists the same route in four steps, and **Demo guide** in the top bar jumps to
+any of them.
 
 1. Start screen: **Continue as Parent** (Sarah Williams, parent of Oliver, 7).
 2. Dashboard: 50% of assessed development targets achieved, latest achievement, next coaching
@@ -115,7 +122,7 @@ All rules live in `src/lib/progress.ts` and are covered by `src/lib/progress.tes
 src/
   types/            Domain model: Parent, Child, Instructor, SwimmingSkill, SkillAssessment,
                     DevelopmentPlan, CoachingSession, ProgressUpdate, Achievement, Notification
-  config/demo.ts    Brand, partner wording, programme phases, demo account ids
+  config/demo.ts    Brand, venue wording, programme phases, demo account ids
   data/
     skills.ts       Skill library content and video slots
     seed.ts         Fictional demo data, dated relative to today
@@ -134,6 +141,7 @@ src/
 e2e/journey.mjs     Browser test of the full demo journey
 scripts/            inline-single.mjs (single-file build), skills-review.mjs (criteria listing)
 SWIMMING_SKILLS_REVIEW.md   Every skill and criterion, with the points needing teacher sign-off
+docs/TEACHER_SIGNOFF_CHECKLIST.md   One-page decision list for the assessment rules
 ```
 
 **Connecting a real backend later.** Screens never touch storage. They call actions on the store,
@@ -157,9 +165,9 @@ export const VIDEO_SOURCES = {
 
 The placeholder is replaced by a real player. Nothing else changes.
 
-**Partner wording.** The app uses neutral wording ("regular swimming lessons", "your leisure
-centre", "Demo Leisure Centre") and no partner name or logo. Change it in one place:
-`PARTNER` in `src/config/demo.ts`.
+**Venue and provider wording.** The app uses neutral wording ("regular swimming lessons", "their
+usual lesson provider", "Example pool (demo venue)") and no organisation's name or logo. It is set
+in one place: `PARTNER` in `src/config/demo.ts`.
 
 **Add a stroke or change the skills.** Edit `src/data/skills.ts`; plans reference skills by id.
 
@@ -176,7 +184,7 @@ string per week.
   advance to week 4.
 - Videos are placeholders.
 - **The skill content is draft.** Criteria, distances, state definitions and video cue lists have
-  not been reviewed by a qualified teacher. `SWIMMING_SKILLS_REVIEW.md` lists what needs sign-off.
+  not been signed off. `docs/TEACHER_SIGNOFF_CHECKLIST.md` lists the decisions needed.
 - The five-minute target for assessing a class of four has not been timed with a real instructor.
   The browser test completes the flow in 19 taps plus four typed notes.
 - Demo dates move forward automatically so the programme always reads as "week 3 of 6".
@@ -185,16 +193,15 @@ string per week.
   and partly tested automatically, but has not had a full WCAG 2.2 AA audit or screen reader
   testing.
 
-## Recommended next phase
+## What should happen next
 
-1. **Agree the assessment framework** with the partner: skill list, success criteria and how the
-   four states map to what teachers already record.
-2. **Backend and accounts:** hosted database, secure sign-in, role-based access enforced on the
-   server (parent, instructor, centre manager), audit trail of assessment changes.
-3. **Data protection and safeguarding:** DPIA, lawful basis and parental consent, retention policy,
-   data-sharing agreement defining controller and processor responsibilities between partners.
-4. **Film the first video set** for the front crawl skills and replace the placeholders.
-5. **Poolside use:** offline-tolerant assessment entry on a phone or tablet, with sync.
-6. **Multi-centre structure:** centres, programmes, cohorts, instructor assignment, manager reporting.
-7. **Pilot** one six-week cohort and measure parent engagement and retention in regular lessons.
-8. Later: booking and payment, real notifications, further strokes.
+More engineering is not the next step. The software is ahead of everything else the idea needs.
+
+1. **Permission and advice.** Confirm that the owner is free to run this, and who owns it, before
+   any outreach.
+2. **Venue feasibility.** A real pool, a real hire cost, and the venue's requirements.
+3. **Teaching sign-off.** Complete `docs/TEACHER_SIGNOFF_CHECKLIST.md` and update the app text.
+4. **Poolside usability trial** of the assessment workflow, timed, with fictional swimmers.
+5. **Demand test**, once permitted: whether parents will pay, not whether they say they like it.
+6. Only then: film the first videos, and scope a production system (accounts, database,
+   server-side access control, audit trail, data protection work).

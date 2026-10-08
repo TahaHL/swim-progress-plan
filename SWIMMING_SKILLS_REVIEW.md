@@ -3,8 +3,8 @@
 **Status: draft content, not yet reviewed by a qualified swimming teacher.**
 
 Everything below was written to make the prototype work. It is consistent with general front crawl
-teaching, but it is not an authoritative standard and has not been checked against the partner's
-programme, Swim England guidance or your own criteria. Nothing here should be shown to a partner as
+teaching, but it is not an authoritative standard and has not been checked against any venue's
+programme, Swim England guidance or your own criteria. Nothing here should be presented to anyone as
 agreed teaching content until you have signed it off.
 
 The skill text lives in one file, `src/data/skills.ts`. To regenerate the criteria listing in
@@ -19,16 +19,16 @@ section 3 after editing that file, run `node scripts/skills-review.mjs`.
   goggle in the water) may be above that level. Decide whether one set of criteria serves all
   stages or whether criteria should vary by stage.
 - [ ] **A3. "Stage" wording.** The app shows "Stage 3 in regular lessons" as plain text supplied by
-  the lesson provider. Confirm the stage names the partner uses, and that showing them is
-  acceptable to the partner.
+  the lesson provider. Confirm which stage names to show, since
+  these belong to the child's lesson provider.
 - [ ] **A4. What counts as achieved.** The progress figure counts a target as achieved at
   Consistent or Mastered. This is a product rule, not a teaching standard. Confirm it, or choose
   Mastered only.
 - [ ] **A5. Seventeen skills, equal weight.** Every skill counts the same in the percentage.
   Confirm that is acceptable, given the overlaps in section 4.
 - [ ] **A6. Demo feedback text.** The instructor notes and targets for the fictional swimmers
-  (in `src/data/seed.ts`) are invented examples. Read the ones for Oliver, since they are what a
-  partner will see.
+  (in `src/data/seed.ts`) are invented examples. Read the ones for Oliver, since they are what
+  anyone trying the demo will see.
 
 ## 2. The four assessment states
 
@@ -405,10 +405,10 @@ or three targets at once, and a swimmer who struggles with one thing is held bac
   you would give yourself.
 - [ ] **Supervision reminder.** "Swimming skills must always be practised under qualified
   supervision. These videos explain what to look for. They are not instructions for unsupervised
-  practice." Confirm the wording, and whether the partner has a required form of words.
+  practice." Confirm the wording, and whether any venue involved has a required form of words.
 - [ ] **Stage decisions.** Every progress screen states that these figures are not an official stage
   assessment and that stage decisions stay with the regular lesson teacher. Confirm the wording
-  with the partner before a live pilot.
+  before any live pilot.
 
 ## Sign-off
 

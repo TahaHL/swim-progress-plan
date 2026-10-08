@@ -1,4 +1,23 @@
-# Changes in this review round
+# Change log
+
+## Round 3: honesty and first-minute clarity
+
+Small changes only. No new product features beyond an optional guide.
+
+| Area | Change | Files |
+| --- | --- | --- |
+| Demo notice | The notice was cut to one word on phones. It now reads in full at every width and says "no real children's data" and "not a live service". | `src/components/layout/AppShell.tsx` |
+| Start screen | Plain statement of the offer, the four-step route through the demo, and a clear "demonstration only" box. | `src/pages/Login.tsx` |
+| Demo guide | Optional button in the top bar that jumps to any of the four steps. | `src/components/layout/DemoGuide.tsx` |
+| Parent dashboard | Each "needs more work" item now shows the next target, so the page answers what comes next. | `src/pages/parent/Home.tsx` |
+| Percentages | Stated as measured against the targets chosen for the programme, not overall swimming ability. | `src/pages/parent/Home.tsx`, `src/components/skills/HowCalculated.tsx` |
+| Neutral wording | Venue is "Example pool (demo venue)"; provider is "their usual lesson provider"; programme and session details are labelled as examples with nothing agreed. | `src/config/demo.ts`, `src/pages/parent/Profile.tsx`, `src/pages/instructor/Sessions.tsx` |
+| Instructor | Each class shows how many swimmers have been updated today. | `src/pages/instructor/Assessments.tsx` |
+| Accessibility | Automated scan (axe, 13 screens at two widths) found invalid description lists, content outside landmarks and a skipped heading level. All fixed; the scan is now clean. | `src/pages/parent/Home.tsx`, `src/components/ui/Status.tsx`, `src/pages/instructor/Overview.tsx`, `src/pages/instructor/SwimmerPlan.tsx`, `src/components/ui/Toast.tsx`, `src/components/layout/AppShell.tsx` |
+| Tests | Browser test extended from 31 to 33 checks. | `e2e/journey.mjs` |
+| Documents | Teacher sign-off checklist; README rewritten to describe a concept, not a partnership. | `docs/TEACHER_SIGNOFF_CHECKLIST.md`, `README.md` |
+
+## Round 2: review fixes
 
 No rebuild. The architecture, data model and screens from the first version are kept.
 

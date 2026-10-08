@@ -10,9 +10,10 @@ import type { ProgressSummary } from '@/lib/progress';
 export function ScopeNote({ childName }: { childName: string }) {
   return (
     <Note icon={Info} tone="foam">
-      These figures measure progress against {childName}'s Swim Progress Plan development targets. They are not an
-      official stage assessment and do not predict when {childName} will move up a stage. Stage decisions stay with the
-      teacher of {childName}'s {PARTNER.lessonsLabel}.
+      These figures measure progress against the development targets chosen for {childName}'s Swim Progress Plan
+      programme, not {childName}'s overall swimming ability. They are not an official stage assessment and do not
+      predict when {childName} will move up a stage. Stage decisions stay with the teacher of {childName}'s{' '}
+      {PARTNER.lessonsLabel}.
     </Note>
   );
 }
@@ -84,6 +85,10 @@ export function HowCalculated({
             />
           </div>
           <ul className="list-disc space-y-1.5 pl-5 text-ink-2 marker:text-line-strong">
+            <li>
+              Only the {summary.totalTargets} targets in this programme are counted. The figures say nothing about
+              skills outside the programme.
+            </li>
             <li>
               A target counts as <strong className="text-ink">achieved</strong> when the skill is assessed as Consistent
               or Mastered.

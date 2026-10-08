@@ -60,9 +60,9 @@ export default function Overview() {
 
       <dl className="grid gap-x-8 gap-y-4 border-y border-line py-5 sm:grid-cols-3">
         {stats.map((stat) => (
-          <div key={stat.label}>
-            <dd className="tabular font-display text-3xl font-semibold">{stat.value}</dd>
+          <div key={stat.label} className="flex flex-col-reverse">
             <dt className="text-ink-2">{stat.label}</dt>
+            <dd className="tabular font-display text-3xl font-semibold">{stat.value}</dd>
           </div>
         ))}
       </dl>

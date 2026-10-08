@@ -74,7 +74,7 @@ export default function Profile() {
               <li>Parents see their own child only. Group members and other swimmers are never shown.</li>
               <li>
                 A live service would need secure sign-in, access controls, UK GDPR compliance, safeguarding procedures
-                and agreed data responsibilities between partners. This prototype does not provide them.
+                and agreed data responsibilities with any venue involved. This prototype provides none of them.
               </li>
             </ul>
           </section>
@@ -115,7 +115,8 @@ export default function Profile() {
               ))}
             </ol>
             <p className="mt-3 text-sm text-ink-3">
-              Session details are examples. Booking and payment are not part of this demonstration.
+              Example details only. No venue, timetable or price has been agreed, and nothing can be booked or paid for
+              in this demonstration.
             </p>
           </section>
 
@@ -129,8 +130,7 @@ export default function Profile() {
                 and does not replace them.
               </li>
               <li>
-                {child.firstName} stays enrolled in regular lessons with {PARTNER.providerLabel} for the whole
-                programme.
+                It is designed for children who are also having regular lessons with {PARTNER.providerLabel}.
               </li>
               <li>
                 Assessments here measure our own development targets. Decisions about moving up a stage are made by{' '}

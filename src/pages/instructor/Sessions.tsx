@@ -109,7 +109,7 @@ export default function Sessions() {
         )}
       </section>
 
-      <p className="mt-8 text-sm text-ink-3">Session times are examples. Booking and payment are not part of this demonstration.</p>
+      <p className="mt-8 text-sm text-ink-3">Example sessions only. No venue or timetable has been agreed, and booking and payment are not part of this demonstration.</p>
     </>
   );
 }

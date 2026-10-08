@@ -67,6 +67,19 @@ async function asInstructorOpenOliver() {
 
 console.log('\nParent experience');
 
+await step('Start screen states plainly that this is a demonstration, with the route through it', async () => {
+  await page.goto(BASE);
+  const notice = page.getByTestId('demo-disclaimer');
+  for (const phrase of ['fictional', 'Sign-in is simulated', 'Do not enter any real', 'not a live service', 'not official stage', 'do not predict']) {
+    await expectText(notice, phrase);
+  }
+  await expectText(page.locator('main'), 'Open the parent view');
+  const body = (await page.locator('body').innerText()).toLowerCase();
+  for (const banned of ['guarantee', 'faster', 'lampton', '£']) {
+    expect(!body.includes(banned), `Start screen should not contain "${banned}"`);
+  }
+});
+
 await step('1. Enter the parent demo', async () => {
   await page.goto(BASE);
   await page.getByRole('button', { name: /Continue as Parent/ }).click();
@@ -84,6 +97,9 @@ await step("2. Oliver's dashboard shows consistent figures", async () => {
   await expectText(page.getByTestId('metric-explanation'), 'not a prediction of passing a stage');
   await expectText(page.getByTestId('improving'), '5 skills moved up in week 3');
   await expectText(page.getByTestId('needs-work'), 'presses down with his leading arm');
+  await expectText(page.getByTestId('needs-work'), 'Next target in coaching: Keep the leading arm extended');
+  await expectText(page.getByTestId('metric-explanation'), "not Oliver's overall swimming ability");
+  await expectText(page.getByTestId('demo-notice').first(), "no real children's data");
   await page.screenshot({ path: `${SHOTS}01-parent-dashboard.png`, fullPage: true });
 });
 
@@ -99,6 +115,16 @@ await step('   "How this is calculated" explains the metric with live numbers', 
   await expectText(dialog, 'not an official stage assessment');
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
+});
+
+await step('   The optional demo guide jumps straight to a step', async () => {
+  await page.getByRole('button', { name: 'Demo guide' }).click();
+  const guide = page.getByRole('dialog', { name: 'A two-minute route through the demo' });
+  await guide.getByRole('button', { name: 'Open Side breathing' }).click();
+  await heading('Side breathing').waitFor();
+  await guide.waitFor({ state: 'detached' });
+  await sidebar.getByRole('link', { name: 'Home' }).click();
+  await heading('Welcome back, Sarah!').waitFor();
 });
 
 await step('3. Open Front Crawl skills', async () => {
@@ -362,6 +388,7 @@ await step('A class of four can be assessed in one pass: 3 skills, a note and on
   for (const id of ['oliver', 'isla', 'noah', 'amelia']) {
     await expectText(page.getByTestId(`pick-child-${id}`), 'Updated today');
   }
+  await expectText(page.locator('[data-testid^="class-progress-"]').first(), '3 of 3 updated today');
   console.log(`        (${taps} taps and 4 typed notes for four swimmers; scripted run took ${((Date.now() - started) / 1000).toFixed(1)}s, which is not a human timing)`);
   await page.screenshot({ path: `${SHOTS}08-class-assessed.png`, fullPage: true });
   await page.goto(`${BASE}#/parent`);
@@ -446,6 +473,8 @@ await step('Phone layout: bottom navigation works and nothing scrolls sideways',
   await mobile.goto(BASE);
   await mobile.getByRole('button', { name: /Continue as Parent/ }).click();
   await mobile.getByRole('heading', { level: 1, name: 'Welcome back, Sarah!' }).waitFor();
+  expect(await mobile.getByTestId('demo-notice').first().isVisible(), 'Demo notice is hidden on a phone');
+  await expectText(mobile.getByTestId('demo-notice').first(), 'Not a live service');
   const nav = mobile.getByRole('navigation', { name: 'Parent navigation' }).last();
   expect(await nav.isVisible(), 'Bottom navigation is not visible');
   const routes = [

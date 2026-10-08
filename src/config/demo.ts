@@ -1,6 +1,7 @@
 /**
- * Product and demo configuration. Wording that refers to the partner organisation lives here
- * so it can be changed in one place once a partnership and its branding are agreed.
+ * Product and demo configuration. Wording about venues and lesson providers lives here so it can
+ * be changed in one place. Everything is deliberately neutral: no venue, provider or price has
+ * been agreed, and the demo must not suggest otherwise.
  */
 export const BRAND = {
   name: 'Swim Progress Plan',
@@ -8,10 +9,10 @@ export const BRAND = {
 } as const;
 
 export const PARTNER = {
-  /** How the child's existing lesson provider is referred to. Neutral until branding is agreed. */
+  /** How the child's existing lessons and lesson provider are referred to. Always generic. */
   lessonsLabel: 'regular swimming lessons',
-  providerLabel: 'your leisure centre',
-  venue: 'Demo Leisure Centre, teaching pool',
+  providerLabel: 'their usual lesson provider',
+  venue: 'Example pool (demo venue)',
 } as const;
 
 export const PROGRAMME = {

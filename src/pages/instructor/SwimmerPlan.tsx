@@ -315,6 +315,7 @@ export default function SwimmerPlan() {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0} className="focus-visible:outline-none">
+        <h2 className="sr-only">{TABS.find((t) => t.id === tab)?.label}</h2>
         {tab === 'assess' && <AssessmentPanel key={child.id} childId={child.id} />}
         {tab === 'history' && <HistoryTab swimmer={swimmer} />}
         {tab === 'notes' && <NotesTab key={child.id} swimmer={swimmer} />}

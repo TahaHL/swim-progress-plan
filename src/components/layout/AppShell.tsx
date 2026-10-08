@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { useApp } from '@/store/AppStore';
 import type { Role } from '@/types';
+import { DemoGuideButton } from './DemoGuide';
 import { Logo } from './Logo';
 
 export interface NavItem {
@@ -51,14 +52,16 @@ export function RoleSwitch({ className }: { className?: string }) {
 export function DemoBar() {
   const { persistent, saveError } = useApp();
   return (
-    <div className="bg-deep text-white" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+    <header className="bg-deep text-white" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <div className="flex min-h-11 items-center justify-between gap-3 px-4 py-1.5 lg:px-6">
-        <p className="min-w-0 text-sm leading-tight text-white/85">
-          <span className="font-semibold text-white">Demonstration</span>
-          <span className="hidden sm:inline">. Fictional swimmers, simulated sign-in, no real accounts.</span>
+        {/* Shown in full at every width: the notice must not depend on screen size. */}
+        <p className="min-w-0 text-[0.8125rem] leading-tight text-white/85 sm:text-sm" data-testid="demo-notice">
+          <span className="font-semibold text-white">Demonstration only.</span> Fictional swimmers, simulated sign-in,
+          no real children's data. Not a live service.
         </p>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden text-sm text-white/70 md:inline">Viewing as</span>
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <DemoGuideButton />
+          <span className="hidden text-sm text-white/70 xl:inline">Viewing as</span>
           <RoleSwitch />
         </div>
       </div>
@@ -68,7 +71,7 @@ export function DemoBar() {
           {saveError ?? 'This browser is blocking storage, so changes will last only until the page is closed.'}
         </p>
       )}
-    </div>
+    </header>
   );
 }
 
@@ -226,7 +229,8 @@ export function AppShell({
 
         <div className="min-w-0 flex-1">
           {/* Mobile header */}
-          <div
+          <section
+            aria-label="App bar"
             className="sticky z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-canvas/95 px-4 backdrop-blur lg:hidden"
             style={{ top: 'env(safe-area-inset-top, 0px)' }}
           >
@@ -234,10 +238,12 @@ export function AppShell({
             {headerExtras ?? (
               <span className="rounded-full bg-deep px-3 py-1 text-sm font-semibold text-white">{roleLabel}</span>
             )}
-          </div>
+          </section>
           {/* Desktop header */}
           {headerExtras && (
-            <div className="hidden h-20 items-center justify-end px-10 lg:flex">{headerExtras}</div>
+            <section aria-label="Account tools" className="hidden h-20 items-center justify-end px-10 lg:flex">
+              {headerExtras}
+            </section>
           )}
 
           <main

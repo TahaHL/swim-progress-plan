@@ -16,9 +16,9 @@ import { useParentScope } from '@/store/AppStore';
 import { fullName } from '@/store/selectors';
 import type { SkillStatus, SwimmingSkill } from '@/types';
 
-function Fact({ label, children }: { label: string; children: ReactNode }) {
+function Fact({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="min-w-0">
+    <div className={cx('min-w-0', wide && 'col-span-2')}>
       <dt className="text-sm text-white/65">{label}</dt>
       <dd className="mt-0.5 font-display leading-snug font-medium">{children}</dd>
     </div>
@@ -50,8 +50,13 @@ export default function Home() {
           .slice(0, 3)
           .map((x) => x.id);
   const needsWork = focusIds
-    .map((id) => ({ skill: getSkill(id), status: currentStatus(assessments, child.id, id), feedback: plan.skillNotes[id]?.feedback }))
-    .filter((x): x is { skill: SwimmingSkill; status: SkillStatus | null; feedback: string | undefined } => Boolean(x.skill) && !isAchieved(x.status));
+    .map((id) => ({
+      skill: getSkill(id),
+      status: currentStatus(assessments, child.id, id),
+      feedback: plan.skillNotes[id]?.feedback,
+      nextTarget: plan.skillNotes[id]?.nextTarget,
+    }))
+    .filter((x): x is { skill: SwimmingSkill; status: SkillStatus | null; feedback: string | undefined; nextTarget: string | undefined } => Boolean(x.skill) && !isAchieved(x.status));
   const achievementIsRecent = latestAchievement ? daysBetween(latestAchievement.date, today()) <= 7 : false;
 
   return (
@@ -77,9 +82,9 @@ export default function Home() {
               </div>
             </div>
             <dl className="mt-7 grid grid-cols-2 gap-x-8 gap-y-5">
-              <div className="col-span-2">
-                <Fact label="Development programme">{plan.programmeName}</Fact>
-              </div>
+              <Fact label="Development programme" wide>
+                {plan.programmeName}
+              </Fact>
               <Fact label="Programme week">
                 {plan.currentWeek === 0 ? 'Not started yet' : `Week ${plan.currentWeek} of ${plan.totalWeeks}`}
                 <span aria-hidden="true" className="mt-2 flex max-w-36 gap-1">
@@ -136,7 +141,8 @@ export default function Home() {
                     {summary.unassessed > 0 && `, ${summary.unassessed} not yet assessed`}
                   </p>
                   <p className="mt-2 max-w-64 text-sm leading-snug text-white/75" data-testid="metric-explanation">
-                    A target is achieved when {child.firstName} is assessed as Consistent or Mastered in that skill.
+                    Measured against the {plan.strokeName.toLowerCase()} targets chosen for this programme, not{' '}
+                    {child.firstName}'s overall swimming ability. Achieved means assessed as Consistent or Mastered.
                     It is not a prediction of passing a stage.
                   </p>
                 </>
@@ -152,7 +158,7 @@ export default function Home() {
       {/* The two questions a parent arrives with: what is getting better, and what is holding them back. */}
       <section aria-labelledby="now-title" className="mt-8">
         <h2 id="now-title" className="text-xl font-semibold">
-          What is improving, and what needs more work
+          What improved, what needs more work, and what comes next
         </h2>
         <div className="mt-3 grid gap-6 lg:grid-cols-2">
           <div className="panel p-5 sm:p-6" data-testid="improving">
@@ -202,7 +208,7 @@ export default function Home() {
           <div className="panel p-5 sm:p-6" data-testid="needs-work">
             <h3 className="flex items-center gap-2 font-display font-semibold">
               <Target className="size-5 text-ocean" aria-hidden="true" />
-              Needs more work, and why
+              Needs more work, why, and what comes next
             </h3>
             {needsWork.length === 0 ? (
               <p className="mt-2 text-ink-2">
@@ -212,7 +218,7 @@ export default function Home() {
               </p>
             ) : (
               <ul className="mt-2 divide-y divide-line">
-                {needsWork.map(({ skill, status, feedback }) => (
+                {needsWork.map(({ skill, status, feedback, nextTarget }) => (
                   <li key={skill.id}>
                     <Link to={`/parent/skills/${skill.id}`} className="-mx-2 block rounded-xl px-2 py-2.5 hover:bg-canvas">
                       <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
@@ -220,6 +226,12 @@ export default function Home() {
                         <StatusBadge status={status} size="sm" />
                       </span>
                       {feedback && <span className="mt-1 line-clamp-3 block text-[0.95rem] leading-snug text-ink-2">{feedback}</span>}
+                      {nextTarget && (
+                        <span className="mt-1.5 block text-[0.95rem] leading-snug">
+                          <span className="font-semibold text-ocean-dark">Next target in coaching: </span>
+                          {nextTarget}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 ))}

@@ -65,7 +65,15 @@ export default function Assessments() {
       <div className="mb-7 flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:gap-x-8">
         {groups.map((group) => (
           <div key={group.key} role="group" aria-label={`Session: ${group.label}`}>
-            <p className="mb-1.5 text-sm text-ink-2">{group.label}</p>
+            <p className="tabular mb-1.5 text-sm text-ink-2">
+              {group.label}
+              {group.swimmers.some((s) => s.plan.currentWeek > 0) && (
+                <span className="font-semibold text-ink" data-testid={`class-progress-${group.key}`}>
+                  {' '}
+                  ({group.swimmers.filter((s) => updatedToday(s.child.id)).length} of {group.swimmers.length} updated today)
+                </span>
+              )}
+            </p>
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
               {group.swimmers.map(({ child, plan, summary }) => {
                 const active = child.id === selected?.child.id;
